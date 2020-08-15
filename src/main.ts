@@ -1,15 +1,5 @@
-import type {
-  Reporter,
-  Test,
-  ReporterOnStartOptions,
-  Context,
-} from "@jest/reporters";
-import type {
-  AggregatedResult,
-  TestCaseResult,
-  AssertionResult,
-  TestResult,
-} from "@jest/test-result";
+import type { Test } from "@jest/reporters";
+import type { AssertionResult, TestResult } from "@jest/test-result";
 import { wrapCommand, cleanPath, openFile, lineColToRange } from "./novaUtils";
 import { InformationView } from "./informationView";
 
@@ -117,48 +107,40 @@ async function asyncActivate() {
   versionProcess.start();
   await new Promise((resolve) => versionProcess.onDidExit(resolve));
 
-  compositeDisposable.add(
-    (nova.assistants.registerIssueAssistant as any)(
-      "*",
-      {
-        provideIssues() {
-          // provideIssues(editor: TextEditor) {
-          return [];
-        },
-      },
-      {
-        event: "onSave",
-      }
-    )
-  );
-
   if (!nova.workspace.path) {
     informationView.status = "No workspace";
     informationView.reload(); // this is needed, otherwise the view won't show up properly, possibly a Nova bug
     return;
   }
 
-  const tracker = new Map<string, TestResult>();
+  const storedProcessInfo = new Map<
+    string,
+    { isRunning: boolean; results?: TestResult }
+  >();
 
   // element is an array of file -> ...ancestorTitles -> test title
   interface TestTreeElement {
     segments: ReadonlyArray<string>;
     isLeaf: Boolean;
   }
+  function getRootElement(k: string) {
+    return {
+      segments: [k],
+      isLeaf:
+        (storedProcessInfo.get(k)!.results?.testResults.length ?? 0) === 0,
+    };
+  }
   const sidebarProvider: TreeDataProvider<TestTreeElement> = {
     getChildren(element): Array<TestTreeElement> {
       if (!element) {
-        return Array.from(tracker.keys()).map((k) => ({
-          segments: [k],
-          isLeaf: tracker.get(k)!.testResults.length === 0,
-        }));
+        return Array.from(storedProcessInfo.keys()).map(getRootElement);
       }
       const [path, ...ancestors] = element.segments;
       if (!path) {
         return [];
       }
-      if (tracker.has(path)) {
-        let results = tracker.get(path)?.testResults ?? [];
+      if (storedProcessInfo.has(path)) {
+        let results = storedProcessInfo.get(path)?.results?.testResults ?? [];
         if (!results) {
           return [];
         }
@@ -190,10 +172,11 @@ async function asyncActivate() {
     },
     getTreeItem(element) {
       const { segments, isLeaf } = element;
-      const results = tracker.get(segments[0]);
-      if (!results) {
+      const elementData = storedProcessInfo.get(segments[0]);
+      if (!elementData) {
         return new TreeItem("Running");
       }
+      const { results, isRunning } = elementData;
       const isTestFile = segments.length == 1;
       const title = isTestFile
         ? cleanPath(segments[0])
@@ -203,29 +186,31 @@ async function asyncActivate() {
         : TreeItemCollapsibleState.Expanded;
       const item = new TreeItem(title, collapsedState);
       if (isTestFile) {
-        item.image = "__builtin.path"
-        if (results.failureMessage) {
+        item.path = segments[0];
+        if (results?.failureMessage) {
           item.descriptiveText = results.failureMessage;
           item.tooltip = results.failureMessage;
           item.color = new Color("rgb", [1, 0, 0, 1]);
         }
       } else {
         if (isLeaf) {
-          const testResult = results.testResults.find(
+          const testResult = results?.testResults.find(
             (r) => r.title === item.name
           );
           if (testResult) {
             if (testResult.failureMessages.length > 0) {
               item.descriptiveText = testResult.failureMessages[0];
-              
+
               item.tooltip = testResult.failureMessages[0];
               item.color = new Color("rgb", [1, 0, 0, 1]);
             } else {
-              item.tooltip = testResult.fullName
+              item.tooltip = testResult.fullName;
             }
           } else {
-            console.warn("Failed to find results", item.name)
+            console.warn("Failed to find results", item.name);
           }
+        } else {
+          item.image = "__builtin.path";
         }
       }
       item.identifier = element.segments.join("__JEST_EXTENSION__");
@@ -241,34 +226,46 @@ async function asyncActivate() {
   });
   compositeDisposable.add(testResultsTreeView);
 
+  // TODO: replace this with an item command if it's possible to figure out which item was clicked
   testResultsTreeView.onDidChangeSelection((elements) => {
-    const element = elements[0]
-    const { segments: [path, ...ancestors], isLeaf } = element;
-    let results = tracker.get(path);
-    if (results && isLeaf) {
-      const testResult = results.testResults.find(
+    if (!elements || !elements.length) {
+      return;
+    }
+    const [
+      {
+        segments: [path, ...ancestors],
+        isLeaf,
+      },
+    ] = elements;
+    if (ancestors.length == 0) {
+      openFile(path);
+      return;
+    }
+    const elementData = storedProcessInfo.get(path);
+    if (elementData && isLeaf) {
+      const testResult = elementData.results?.testResults.find(
         (r) => r.title === ancestors[ancestors.length - 1]
       );
       if (!testResult) {
         return;
       }
       (async () => {
-      const editor = await openFile(path);
-      if (!editor) {
-        nova.workspace.showWarningMessage("Couldn't open path");
-        return;
-      }
-      if (!testResult.location) {
-        return;
-      }
-      const pos = {
-        line: testResult.location.line,
-        character: testResult.location.column
-      }
-      const range = lineColToRange(editor.document, {start: pos, end: pos})
-      editor.addSelectionForRange(range);
-      editor.scrollToPosition(range.start);
-    })()
+        const editor = await openFile(path);
+        if (!editor) {
+          nova.workspace.showWarningMessage("Couldn't open path");
+          return;
+        }
+        if (!testResult.location) {
+          return;
+        }
+        const pos = {
+          line: testResult.location.line,
+          character: testResult.location.column,
+        };
+        const range = lineColToRange(editor.document, { start: pos, end: pos });
+        editor.selectedRange = range;
+        editor.scrollToPosition(range.start);
+      })();
     }
   });
 
@@ -287,16 +284,18 @@ async function asyncActivate() {
         ...nova.path.split(editor.document.path).slice(3)
       );
       return (
-        tracker.get(volumeLessEditorPath)?.testResults.map((result) => {
-          const issue = new Issue();
-          issue.message = result.title;
-          issue.severity = resultStatusToIssueSeverity(result.status);
-          if (result.location) {
-            issue.line = result.location.line;
-            issue.column = result.location.column;
-          }
-          return issue;
-        }) ?? []
+        storedProcessInfo
+          .get(volumeLessEditorPath)
+          ?.results?.testResults.map((result) => {
+            const issue = new Issue();
+            issue.message = result.title;
+            issue.severity = resultStatusToIssueSeverity(result.status);
+            if (result.location) {
+              issue.line = result.location.line;
+              issue.column = result.location.column;
+            }
+            return issue;
+          }) ?? []
       );
     },
   };
@@ -328,18 +327,26 @@ async function asyncActivate() {
     switch (event) {
       case "onTestStart": {
         const data: Test = rawData;
-        tracker.delete(nova.path.normalize(data.path));
+        const key = nova.path.normalize(data.path);
+        storedProcessInfo.set(key, {
+          isRunning: true,
+          results: storedProcessInfo.get(key)?.results,
+        });
+        testResultsTreeView.reload(); // This appears to use reference equality, so I can't reload the specific piece
         break;
       }
       case "onTestResult": {
         const data: TestResult = rawData;
-        tracker.set(nova.path.normalize(data.testFilePath), data);
+        const key = nova.path.normalize(data.testFilePath);
+        console.log("onTestResult", key);
+        storedProcessInfo.set(key, { isRunning: false, results: data });
+        testResultsTreeView.reload(); // This appears to use reference equality, so I can't reload the specific piece
         break;
       }
       default:
         console.warn("unexpected event", event);
+        testResultsTreeView.reload();
     }
-    testResultsTreeView.reload();
   });
   jestProcess.onStderr((line) => {
     console.warn(line.trim());

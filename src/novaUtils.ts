@@ -39,11 +39,13 @@ export async function openFile(uri: string) {
   return null;
 }
 
-
 // this could really use some tests
 export function lineColToRange(
   document: TextDocument,
-  range: { start: { line: number, character: number }, end: { line: number, character: number } }
+  range: {
+    start: { line: number; character: number };
+    end: { line: number; character: number };
+  }
 ): Range {
   const fullContents = document.getTextInRange(new Range(0, document.length));
   let rangeStart = 0;
@@ -63,4 +65,3 @@ export function lineColToRange(
   }
   return new Range(rangeStart, rangeEnd);
 }
-
