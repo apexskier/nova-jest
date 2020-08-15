@@ -48,20 +48,20 @@ async function npmBin(): Promise<string> {
 
 function resultStatusToIssueSeverity(
   status: AssertionResult["status"]
-): IssueSeverity {
+): IssueSeverity | null {
   switch (status) {
     case "passed":
-      return IssueSeverity.Info;
+      return null;
     case "failed":
       return IssueSeverity.Error;
     case "skipped":
-      return IssueSeverity.Warning;
+      return IssueSeverity.Hint;
     case "pending":
-      return IssueSeverity.Warning;
+      return IssueSeverity.Hint;
     case "todo":
-      return IssueSeverity.Warning;
+      return IssueSeverity.Hint;
     case "disabled":
-      return IssueSeverity.Warning;
+      return IssueSeverity.Hint;
   }
 }
 
@@ -269,41 +269,8 @@ async function asyncActivate() {
     }
   });
 
-  const issueAssistant: IssueAssistant = {
-    provideIssues(editor) {
-      if (editor.document.isRemote) {
-        console.warn("remote documents not supported");
-        return [];
-      }
-      if (!editor.document.path) {
-        return [];
-      }
-      const pathParts = nova.path.split(editor.document.path);
-      const volumeLessEditorPath = nova.path.join(
-        pathParts[0],
-        ...nova.path.split(editor.document.path).slice(3)
-      );
-      return (
-        storedProcessInfo
-          .get(volumeLessEditorPath)
-          ?.results?.testResults.map((result) => {
-            const issue = new Issue();
-            issue.message = result.title;
-            issue.severity = resultStatusToIssueSeverity(result.status);
-            if (result.location) {
-              issue.line = result.location.line;
-              issue.column = result.location.column;
-            }
-            return issue;
-          }) ?? []
-      );
-    },
-  };
-  compositeDisposable.add(
-    (nova.assistants.registerIssueAssistant as any)("*", issueAssistant, {
-      event: "onSave",
-    })
-  );
+  const jestIssueCollection = new IssueCollection();
+  compositeDisposable.add(jestIssueCollection);
 
   // jest process will continually run
   const jestProcess = new Process(jestExecPath, {
@@ -319,6 +286,7 @@ async function asyncActivate() {
     cwd: nova.workspace.path,
     stdio: ["ignore", "pipe", "pipe"],
   });
+  // NOTE: We could emit in JSON (https://jestjs.io/docs/en/cli#--json) but that's going to be slower as all tests will need to pass
   jestProcess.onStdout((line) => {
     if (!line.trim()) {
       return;
@@ -338,9 +306,30 @@ async function asyncActivate() {
       case "onTestResult": {
         const data: TestResult = rawData;
         const key = nova.path.normalize(data.testFilePath);
-        console.log("onTestResult", key);
         storedProcessInfo.set(key, { isRunning: false, results: data });
         testResultsTreeView.reload(); // This appears to use reference equality, so I can't reload the specific piece
+        const fileURI = `file://${key}`;
+        const issues = [];
+        for (const result of data.testResults) {
+          const severity = resultStatusToIssueSeverity(result.status);
+          if (!severity) {
+            continue;
+          }
+          const issue = new Issue();
+          if (result.failureMessages.length) {
+            issue.message = result.failureMessages[0];
+          } else {
+            issue.message = result.status;
+          }
+          issue.source = result.title;
+          issue.severity = severity;
+          if (result.location) {
+            issue.line = result.location.line;
+            issue.column = result.location.column;
+          }
+          issues.push(issue);
+        }
+        jestIssueCollection.set(fileURI, issues);
         break;
       }
       default:
