@@ -16,7 +16,7 @@ export default {
   input: "src/main.ts",
   plugins: [typescript(), resolve()],
   output: {
-    file: "typescript.novaextension/Scripts/main.dist.js",
+    file: "jest.novaextension/Scripts/main.dist.js",
     sourcemap: true,
     format: "cjs",
   },

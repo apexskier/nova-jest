@@ -6,17 +6,14 @@ type Element = {
 
 export class InformationView {
   constructor(reload: () => Promise<void>) {
-    this._treeView = new TreeView("apexskier.typescript.sidebar.info", {
+    this._treeView = new TreeView("apexskier.jest.sidebar.info", {
       dataProvider: this,
     });
 
-    nova.commands.register(
-      "apexskier.typescript.refreshInformation",
-      async () => {
-        await reload();
-        this.reload();
-      }
-    );
+    nova.commands.register("apexskier.jest.refreshInformation", async () => {
+      await reload();
+      this.reload();
+    });
 
     this.getChildren = this.getChildren.bind(this);
     this.getTreeItem = this.getTreeItem.bind(this);
@@ -35,9 +32,9 @@ export class InformationView {
   }
 
   private readonly _tsVersionElement: Element = {
-    title: "TypeScript Version",
+    title: "Jest Version",
     value: "",
-    identifier: "tsversion",
+    identifier: "jestVersion",
   };
   public set tsVersion(value: string) {
     this._tsVersionElement.value = value;

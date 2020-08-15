@@ -46,7 +46,7 @@ Add any other context about the problem here.
 If you can find an npm debug log file for the extension error you're experiencing it will
 be very helpful.
 
-To find one, first run `grep -rl "apexskier.typescript" "$(npm config get cache)/_logs"` in
+To find one, first run `grep -rl "apexskier.jest" "$(npm config get cache)/_logs"` in
 your terminal. If you see any files output, grab the contents and paste them into the code
 fence below.
 -->

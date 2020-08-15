@@ -1,0 +1,50 @@
+{
+  "identifier": "apexskier.jest",
+  "name": "Jest",
+  "vendor": "Cameron Little",
+  "description": "Jest Nova integration",
+  "version": "1.5.1",
+  "categories": ["completions", "languages", "issues", "sidebars"],
+  "license": "MIT",
+  "repository": "https://github.com/apexskier/nova-jest",
+  "bugs": "https://github.com/apexskier/nova-jest/issues",
+
+  "main": "main.dist.js",
+
+  "activationEvents": ["onWorkspaceContains:node_modules/.bin/jest"],
+
+  "entitlements": {
+    "process": true
+  },
+
+  "config-workspace": [
+    {
+      "key": "apexskier.jest.config.execPath",
+      "title": "Jest executable",
+      "type": "path"
+    }
+  ],
+
+  "sidebars": [
+    {
+      "id": "apexskier.jest.sidebar",
+      "name": "Jest",
+      "smallImage": "SidebarSmall",
+      "largeImage": "SidebarLarge",
+      "sections": [
+        {
+          "id": "apexskier.jest.sidebar.info",
+          "name": "Information",
+          "placeholderText": "Jest Extension Information",
+          "headerCommands": [
+            {
+              "title": "Refresh",
+              "image": "__builtin.refresh",
+              "command": "apexskier.jest.refreshInformation"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

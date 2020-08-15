@@ -1,5 +1,5 @@
 .DS_Store
 node_modules/
-/typescript.novaextension/Scripts
+/jest.novaextension/Scripts
 logs/
 
