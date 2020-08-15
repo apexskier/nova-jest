@@ -1,8 +1,12 @@
-import { wrapCommand } from "./novaUtils";
+import { wrapCommand, cleanPath } from "./novaUtils";
 
 (global as any).nova = {
   workspace: {
+    path: "/workspace",
     showErrorMessage: jest.fn(),
+  },
+  environment: {
+    HOME: "/home",
   },
 };
 
@@ -27,6 +31,20 @@ describe("novaUtils", () => {
       const wrapped = wrapCommand(command);
       wrapped("a", "b", "c");
       expect(command).toBeCalledWith("a", "b", "c");
+    });
+  });
+
+  describe("cleanPath", () => {
+    it("normalizes paths", () => {
+      expect(cleanPath("/test/to/../to")).toBe("");
+    });
+
+    it("replaces HOME with ~", () => {
+      expect(cleanPath("/home/a/b/c")).toBe("~/a/b/c");
+    });
+
+    it("replaces workspace dir with .", () => {
+      expect(cleanPath("/workspace/a/b/c")).toBe("./a/b/c");
     });
   });
 });

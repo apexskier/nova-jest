@@ -17,6 +17,16 @@
     "process": true
   },
 
+  "config": [
+    {
+      "key": "apexskier.jest.config.runOn",
+      "title": "Run tests on:",
+      "type": "enum",
+      "values": ["Save", "Manually"],
+      "default": "Save"
+    }
+  ],
+
   "config-workspace": [
     {
       "key": "apexskier.jest.config.execPath",
@@ -43,6 +53,11 @@
               "command": "apexskier.jest.refreshInformation"
             }
           ]
+        },
+        {
+          "id": "apexskier.jest.sidebar.tests",
+          "name": "Tests",
+          "placeholderText": "Test results will go here"
         }
       ]
     }

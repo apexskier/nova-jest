@@ -5,7 +5,9 @@
   "main": "",
   "private": true,
   "scripts": {
-    "build": "rollup -c rollup.config.main.js && rm -rf jest.novaextension/node_modules",
+    "build": "concurrently 'yarn:build:*'",
+    "build:main": "rollup -c rollup.config.main.js",
+    "build:reporter": "rollup -c rollup.config.reporter.js",
     "test": "jest",
     "lint": "concurrently 'yarn:lint:*'",
     "lint:eslint": "eslint --ignore-path .gitignore \"**/*.{ts,js}\"",
