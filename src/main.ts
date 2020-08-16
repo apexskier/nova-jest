@@ -399,7 +399,7 @@ export function activate() {
   console.log("activating...");
   asyncActivate()
     .catch((err) => {
-      informationView.status = "Not active"
+      informationView.status = "Not active";
       console.error("Failed to activate");
       console.error(err);
     })
