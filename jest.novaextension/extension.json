@@ -2,30 +2,20 @@
   "identifier": "apexskier.jest",
   "name": "Jest",
   "vendor": "Cameron Little",
-  "description": "Jest Nova integration",
-  "version": "1.5.1",
-  "categories": ["completions", "languages", "issues", "sidebars"],
+  "description": "Jest test framework integration",
+  "version": "1.0.0",
+  "categories": ["issues", "sidebars"],
   "license": "MIT",
   "repository": "https://github.com/apexskier/nova-jest",
   "bugs": "https://github.com/apexskier/nova-jest/issues",
 
   "main": "main.dist.js",
 
-  "activationEvents": ["onWorkspaceContains:node_modules/.bin/jest"],
+  "activationEvents": ["*"],
 
   "entitlements": {
     "process": true
   },
-
-  "config": [
-    {
-      "key": "apexskier.jest.config.runOn",
-      "title": "Run tests on:",
-      "type": "enum",
-      "values": ["Save", "Manually"],
-      "default": "Save"
-    }
-  ],
 
   "config-workspace": [
     {
