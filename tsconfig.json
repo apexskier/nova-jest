@@ -1,12 +1,14 @@
 {
   "compilerOptions": {
     "target": "es5",
+    "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "noEmit": true,
     "strict": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "experimentalDecorators": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "downlevelIteration": true
   }
 }

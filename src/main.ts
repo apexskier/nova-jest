@@ -1,5 +1,8 @@
+// eslint-disable-next-line no-unused-vars
 import type { Test } from "@jest/reporters";
+// eslint-disable-next-line no-unused-vars
 import type { AssertionResult, TestResult } from "@jest/test-result";
+import { clean } from "./stackUtils";
 import { wrapCommand, cleanPath, openFile, lineColToRange } from "./novaUtils";
 import { InformationView } from "./informationView";
 
@@ -176,7 +179,7 @@ async function asyncActivate() {
       if (!elementData) {
         return new TreeItem("Running");
       }
-      const { results, isRunning } = elementData;
+      const { results } = elementData;
       const isTestFile = segments.length == 1;
       const title = isTestFile
         ? cleanPath(segments[0])
@@ -190,7 +193,7 @@ async function asyncActivate() {
         if (results?.failureMessage) {
           item.descriptiveText = results.failureMessage;
           item.tooltip = results.failureMessage;
-          item.color = new Color("rgb", [1, 0, 0, 1]);
+          // item.color = new Color("rgb", [1, 0, 0, 1]);
         }
       } else {
         if (isLeaf) {
@@ -202,7 +205,7 @@ async function asyncActivate() {
               item.descriptiveText = testResult.failureMessages[0];
 
               item.tooltip = testResult.failureMessages[0];
-              item.color = new Color("rgb", [1, 0, 0, 1]);
+              // item.color = new Color("rgb", [1, 0, 0, 1]);
             } else {
               item.tooltip = testResult.fullName;
             }
@@ -263,14 +266,11 @@ async function asyncActivate() {
           character: testResult.location.column,
         };
         const range = lineColToRange(editor.document, { start: pos, end: pos });
-        editor.selectedRange = range;
+        (editor as any).selectedRange = range;
         editor.scrollToPosition(range.start);
       })();
     }
   });
-
-  const jestIssueCollection = new IssueCollection();
-  compositeDisposable.add(jestIssueCollection);
 
   // jest process will continually run
   const jestProcess = new Process(jestExecPath, {
@@ -286,6 +286,26 @@ async function asyncActivate() {
     cwd: nova.workspace.path,
     stdio: ["ignore", "pipe", "pipe"],
   });
+
+  // store an issue collection per test suite, that way errors can be pushed into different files but still be associated
+  // with a specific test suite so we don't clear issues from other suites.
+  class TestIssueCollections implements Disposable {
+    private _collections = new Map<string, IssueCollection>();
+    get(suite: string): IssueCollection {
+      if (!this._collections.has(suite)) {
+        this._collections.set(suite, new IssueCollection());
+      }
+      return this._collections.get(suite)!;
+    }
+    dispose() {
+      for (const collection of this._collections.values()) {
+        collection.dispose();
+      }
+    }
+  }
+  const jestIssueCollections = new TestIssueCollections();
+  compositeDisposable.add(jestIssueCollections);
+
   // NOTE: We could emit in JSON (https://jestjs.io/docs/en/cli#--json) but that's going to be slower as all tests will need to pass
   jestProcess.onStdout((line) => {
     if (!line.trim()) {
@@ -309,27 +329,51 @@ async function asyncActivate() {
         storedProcessInfo.set(key, { isRunning: false, results: data });
         testResultsTreeView.reload(); // This appears to use reference equality, so I can't reload the specific piece
         const fileURI = `file://${key}`;
-        const issues = [];
+        if (nova.inDevMode()) {
+          console.log("data", JSON.stringify(data, null, "  "));
+        }
+        const issueCollection = jestIssueCollections.get(fileURI);
+        issueCollection.clear();
         for (const result of data.testResults) {
           const severity = resultStatusToIssueSeverity(result.status);
           if (!severity) {
             continue;
           }
           const issue = new Issue();
-          if (result.failureMessages.length) {
-            issue.message = result.failureMessages[0];
-          } else {
-            issue.message = result.status;
-          }
+          // if (nova.inDevMode()) {
+          //   console.log("result", JSON.stringify(result, null, "  "));
+          // }
+          (issue as any).message = result.fullName;
           issue.source = result.title;
           issue.severity = severity;
           if (result.location) {
             issue.line = result.location.line;
             issue.column = result.location.column;
           }
-          issues.push(issue);
+          issueCollection.append(fileURI, [issue]);
+
+          if (Array.isArray(result.failureDetails)) {
+            result.failureDetails.map((details: any) => {
+              // if (nova.inDevMode()) {
+              //   console.log("details", JSON.stringify(details, null, "  "));
+              // }
+              if (typeof details.stack === "string") {
+                const callSite = clean(details.stack);
+                if (callSite) {
+                  const issue = new Issue();
+                  (issue as any).message = details.message;
+                  issue.code = result.fullName;
+                  issue.severity = IssueSeverity.Error;
+                  issue.line = callSite.line;
+                  issue.column = callSite.column;
+                  console.log(JSON.stringify(callSite, null, "  "));
+                  issueCollection.append(`file://${callSite.file}`, [issue]);
+                }
+              }
+            });
+          }
         }
-        jestIssueCollection.set(fileURI, issues);
+        // issueCollection.set(fileURI, issues);
         break;
       }
       default:

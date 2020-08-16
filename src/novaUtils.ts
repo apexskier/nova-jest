@@ -48,20 +48,29 @@ export function lineColToRange(
   }
 ): Range {
   const fullContents = document.getTextInRange(new Range(0, document.length));
-  let rangeStart = 0;
-  let rangeEnd = 0;
+  let rangeStart: number | null = null;
+  let rangeEnd: number | null = null;
   let chars = 0;
   const lines = fullContents.split(document.eol);
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
     const lineLength = lines[lineIndex].length + document.eol.length;
     if (range.start.line === lineIndex) {
+      if (range.start.character > lineLength) {
+        throw new Error("range out of bounds of start line");
+      }
       rangeStart = chars + range.start.character;
     }
     if (range.end.line === lineIndex) {
+      if (range.end.character > lineLength) {
+        throw new Error("range out of bounds of end line");
+      }
       rangeEnd = chars + range.end.character;
       break;
     }
     chars += lineLength;
+  }
+  if (rangeStart == null || rangeEnd == null) {
+    throw new Error("range out of bounds of document");
   }
   return new Range(rangeStart, rangeEnd);
 }
