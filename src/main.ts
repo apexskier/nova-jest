@@ -329,9 +329,9 @@ async function asyncActivate() {
         storedProcessInfo.set(key, { isRunning: false, results: data });
         testResultsTreeView.reload(); // This appears to use reference equality, so I can't reload the specific piece
         const fileURI = `file://${key}`;
-        if (nova.inDevMode()) {
-          console.log("data", JSON.stringify(data, null, "  "));
-        }
+        // if (nova.inDevMode()) {
+        //   console.log("data", JSON.stringify(data, null, "  "));
+        // }
         const issueCollection = jestIssueCollections.get(fileURI);
         issueCollection.clear();
         for (const result of data.testResults) {
@@ -366,7 +366,6 @@ async function asyncActivate() {
                   issue.severity = IssueSeverity.Error;
                   issue.line = callSite.line;
                   issue.column = callSite.column;
-                  console.log(JSON.stringify(callSite, null, "  "));
                   issueCollection.append(`file://${callSite.file}`, [issue]);
                 }
               }

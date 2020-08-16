@@ -50,5 +50,8 @@
   },
   "resolutions": {
     "minimist": "^0.2.1"
+  },
+  "dependencies": {
+    "rollup-plugin-node-builtins": "^2.1.2"
   }
 }
