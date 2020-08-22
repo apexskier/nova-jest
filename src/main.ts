@@ -16,6 +16,8 @@ nova.commands.register(
 nova.config.onDidChange("apexskier.jest.config.execPath", reload);
 nova.workspace.config.onDidChange("apexskier.jest.config.execPath", reload);
 
+nova.config.onDidChange("apexskier.jest.config.coverage", reload);
+
 const compositeDisposable = new CompositeDisposable();
 
 async function reload() {
@@ -286,6 +288,11 @@ async function asyncActivate() {
     }
   });
 
+  const coverage = nova.config.get("apexskier.jest.config.coverage", "boolean");
+  const coverageOptions = coverage
+    ? ["--coverage", "--coverageReporters=html"]
+    : [];
+
   // jest process will continually run
   const jestProcess = new Process(jestExecPath, {
     args: [
@@ -293,6 +300,7 @@ async function asyncActivate() {
       "--testLocationInResults",
       "--reporters",
       nova.path.join(nova.extension.path, "Scripts/reporter.dist.js"),
+      ...coverageOptions,
     ],
     env: {
       CI: "true",
@@ -403,6 +411,16 @@ async function asyncActivate() {
       jestProcess.terminate();
     },
   });
+
+  compositeDisposable.add(
+    nova.commands.register("apexskier.jest.displayCoverage", async () => {
+      if (nova.workspace.path) {
+        nova.workspace.openFile(
+          nova.path.join(nova.workspace.path, "coverage/index.html")
+        );
+      }
+    })
+  );
 
   informationView.status = "Running";
 

@@ -17,6 +17,16 @@
     "process": true
   },
 
+  "config": [
+    {
+      "key": "apexskier.jest.config.coverage",
+      "title": "Collect coverage",
+      "description": "Collect coverage while running tests, available from the Jest sidebar.",
+      "type": "boolean",
+      "default": false
+    }
+  ],
+
   "config-workspace": [
     {
       "key": "apexskier.jest.config.execPath",
@@ -41,6 +51,11 @@
               "title": "Refresh",
               "image": "__builtin.refresh",
               "command": "apexskier.jest.refreshInformation"
+            },
+            {
+              "title": "Display coverage",
+              "image": "__builtin.remote",
+              "command": "apexskier.jest.displayCoverage"
             }
           ]
         },
