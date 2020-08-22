@@ -68,6 +68,11 @@ function resultStatusToIssueSeverity(
   }
 }
 
+// colors pulled from
+const successColor = new Color("hex", [21 / 255, 194 / 255, 19 / 255, 1]);
+const failureColor = new Color("rgb", [194 / 255, 19 / 255, 37 / 255, 1]);
+const pendingColor = new Color("rgb", [194 / 255, 168 / 255, 19 / 255, 1]);
+
 async function asyncActivate() {
   informationView.status = "Activating...";
 
@@ -177,9 +182,9 @@ async function asyncActivate() {
       const { segments, isLeaf } = element;
       const elementData = storedProcessInfo.get(segments[0]);
       if (!elementData) {
-        return new TreeItem("Running");
+        return new TreeItem("...");
       }
-      const { results } = elementData;
+      const { results, isRunning } = elementData;
       const isTestFile = segments.length == 1;
       const title = isTestFile
         ? cleanPath(segments[0])
@@ -193,7 +198,12 @@ async function asyncActivate() {
         if (results?.failureMessage) {
           item.descriptiveText = results.failureMessage;
           item.tooltip = results.failureMessage;
-          // item.color = new Color("rgb", [1, 0, 0, 1]);
+          (item as any).color = failureColor;
+        } else {
+          (item as any).color = successColor;
+        }
+        if (isRunning) {
+          (item as any).color = pendingColor;
         }
       } else {
         if (isLeaf) {
@@ -205,9 +215,13 @@ async function asyncActivate() {
               item.descriptiveText = testResult.failureMessages[0];
 
               item.tooltip = testResult.failureMessages[0];
-              // item.color = new Color("rgb", [1, 0, 0, 1]);
+              (item as any).color = failureColor;
             } else {
               item.tooltip = testResult.fullName;
+              (item as any).color = successColor;
+            }
+            if (isRunning) {
+              (item as any).color = pendingColor;
             }
           } else {
             console.warn("Failed to find results", item.name);

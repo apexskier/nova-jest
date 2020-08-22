@@ -41,10 +41,6 @@ describe("novaUtils", () => {
   });
 
   describe("cleanPath", () => {
-    it.skip("normalizes paths", () => {
-      expect(cleanPath("/test/to/../to")).toBe("/test/to");
-    });
-
     it("replaces HOME with ~", () => {
       expect(cleanPath("/home/a/b/c")).toBe("~/a/b/c");
     });
