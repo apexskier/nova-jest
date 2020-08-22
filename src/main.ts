@@ -131,7 +131,7 @@ async function asyncActivate() {
     segments: ReadonlyArray<string>;
     isLeaf: Boolean;
   }
-  function getRootElement(k: string) {
+  function getRootElement(k: string): TestTreeElement {
     return {
       segments: [k],
       isLeaf:
@@ -191,7 +191,7 @@ async function asyncActivate() {
         : segments[segments.length - 1];
       const collapsedState = isLeaf
         ? TreeItemCollapsibleState.None
-        : TreeItemCollapsibleState.Expanded;
+        : TreeItemCollapsibleState.Collapsed;
       const item = new TreeItem(title, collapsedState);
       if (isTestFile) {
         item.path = segments[0];
@@ -234,7 +234,10 @@ async function asyncActivate() {
       return item;
     },
     getParent(element) {
-      return { segments: element.segments.slice(0, -1), isLeaf: false };
+      return {
+        segments: element.segments.slice(0, -1),
+        isLeaf: false,
+      };
     },
   };
 
@@ -321,27 +324,54 @@ async function asyncActivate() {
   compositeDisposable.add(jestIssueCollections);
 
   // NOTE: We could emit in JSON (https://jestjs.io/docs/en/cli#--json) but that's going to be slower as all tests will need to pass
-  jestProcess.onStdout((line) => {
+  jestProcess.onStdout(handleJestLine);
+  jestProcess.onStderr((line) => {
+    console.warn(line.trim());
+  });
+  jestProcess.start();
+  compositeDisposable.add({
+    dispose() {
+      jestProcess.terminate();
+    },
+  });
+
+  // TODO: I haven't yet figured out a reliable way to reload a specific element,
+  // avoiding reference equality issues, that avoids spamming multiple reloads,
+  // which causes annoying flickering issues
+  // a simple mechanism would be a debounce, but there's some mores stuff to try.
+  function reloadTree(key: TestTreeElement | null) {
+    console.log(key);
+    testResultsTreeView.reload(null);
+  }
+
+  function handleJestLine(line: string) {
     if (!line.trim()) {
       return;
     }
     const { event, data: rawData } = JSON.parse(line);
+
+    let toReload: TestTreeElement | null = null;
     switch (event) {
       case "onTestStart": {
         const data: Test = rawData;
         const key = nova.path.normalize(data.path);
+        // this needs to happen only after initial reload, I think
+        if (storedProcessInfo.has(key)) {
+          toReload = getRootElement(key);
+        }
         storedProcessInfo.set(key, {
           isRunning: true,
           results: storedProcessInfo.get(key)?.results,
         });
-        testResultsTreeView.reload(); // This appears to use reference equality, so I can't reload the specific piece
         break;
       }
       case "onTestResult": {
         const data: TestResult = rawData;
         const key = nova.path.normalize(data.testFilePath);
+        if (storedProcessInfo.has(key)) {
+          toReload = getRootElement(key);
+        }
         storedProcessInfo.set(key, { isRunning: false, results: data });
-        testResultsTreeView.reload(); // This appears to use reference equality, so I can't reload the specific piece
         const fileURI = `file://${key}`;
         // if (nova.inDevMode()) {
         //   console.log("data", JSON.stringify(data, null, "  "));
@@ -386,23 +416,13 @@ async function asyncActivate() {
             });
           }
         }
-        // issueCollection.set(fileURI, issues);
         break;
       }
       default:
         console.warn("unexpected event", event);
-        testResultsTreeView.reload();
     }
-  });
-  jestProcess.onStderr((line) => {
-    console.warn(line.trim());
-  });
-  jestProcess.start();
-  compositeDisposable.add({
-    dispose() {
-      jestProcess.terminate();
-    },
-  });
+    reloadTree(toReload);
+  }
 
   informationView.status = "Running";
 

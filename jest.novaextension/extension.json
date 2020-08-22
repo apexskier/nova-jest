@@ -47,7 +47,7 @@
         {
           "id": "apexskier.jest.sidebar.tests",
           "name": "Tests",
-          "placeholderText": "Test results will go here"
+          "placeholderText": "Add some tests to see an overview here"
         }
       ]
     }
