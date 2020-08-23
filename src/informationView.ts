@@ -4,7 +4,7 @@ type Element = {
   readonly identifier: string;
 };
 
-export class InformationView {
+export class InformationView implements TreeDataProvider<Element>, Disposable {
   constructor() {
     this._treeView = new TreeView("apexskier.jest.sidebar.info", {
       dataProvider: this,
@@ -52,5 +52,10 @@ export class InformationView {
     item.descriptiveText = element.value;
     item.identifier = element.identifier;
     return item;
+  }
+
+  dispose() {
+    this.status = "Disposed";
+    this._treeView.dispose();
   }
 }
