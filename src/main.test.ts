@@ -8,7 +8,6 @@ jest.mock("./testResults", () => {
   }
   return { TestResultsManager: jest.fn(() => new TestResultsManager()) };
 });
-
 jest.mock("./jestExecPath", () => ({
   getJestExecPath: async () => "/jestExecPath",
 }));
@@ -54,8 +53,6 @@ const CompositeDisposableMock: jest.Mock<Partial<
 (global as any).CompositeDisposable = CompositeDisposableMock;
 const ProcessMock: jest.Mock<Partial<Process>> = jest.fn();
 (global as any).Process = ProcessMock;
-const ColorMock: jest.Mock<Partial<Color>> = jest.fn();
-(global as any).Color = ColorMock;
 
 describe("test suite", () => {
   // dynamically require so global mocks are setup before top level code execution
