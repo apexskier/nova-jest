@@ -251,7 +251,7 @@ export class TestResultsManager
 
   /// MARK TreeDataProvider
 
-  getChildren(element: TestTreeElement): Array<TestTreeElement> {
+  getChildren(element: TestTreeElement | null): Array<TestTreeElement> {
     if (!element) {
       return Array.from(this._storedProcessInfo.keys()).map(
         this._getRootElement
