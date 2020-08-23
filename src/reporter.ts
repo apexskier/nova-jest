@@ -22,7 +22,9 @@ export default class NovaExtensionReporter implements Reporter {
   onTestStart(test: Test) {
     console.log(JSON.stringify({ event: "onTestStart", data: test }));
   }
-  onRunComplete(contexts: Set<Context>, results: AggregatedResult) {}
+  onRunComplete(contexts: Set<Context>, results: AggregatedResult) {
+    console.log(JSON.stringify({ event: "onRunComplete", data: results }));
+  }
 
   getLastError() {
     // noop, this never ends

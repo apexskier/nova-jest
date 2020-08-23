@@ -1,7 +1,13 @@
 // eslint-disable-next-line no-unused-vars
 import type { Test } from "@jest/reporters";
-// eslint-disable-next-line no-unused-vars
-import type { AssertionResult, TestResult } from "@jest/test-result";
+import type {
+  // eslint-disable-next-line no-unused-vars
+  AggregatedResult,
+  // eslint-disable-next-line no-unused-vars
+  AssertionResult,
+  // eslint-disable-next-line no-unused-vars
+  TestResult,
+} from "@jest/test-result";
 import { cleanPath, lineColToRange, openFile, wrapCommand } from "./novaUtils";
 import { clean } from "./stackUtils";
 
@@ -68,14 +74,20 @@ export class TestResultsManager
   private _compositeDisposable = new CompositeDisposable();
 
   constructor() {
+    this.handleJestLine = this.handleJestLine.bind(this);
+    this.getChildren = this.getChildren.bind(this);
+    this.getRootElement = this.getRootElement.bind(this);
+    this.getTreeItem = this.getTreeItem.bind(this);
+    this.openTest = this.openTest.bind(this);
+
     this._compositeDisposable.add(this._treeView);
+    this._compositeDisposable.add(this._issueCollection);
     this._compositeDisposable.add(
       nova.commands.register(
         "apexskier.jest.openTest",
         wrapCommand(this.openTest)
       )
     );
-    this._compositeDisposable.add(this._issueCollection);
   }
 
   async openTest(workspace: Workspace) {
@@ -133,8 +145,9 @@ export class TestResultsManager
   // avoiding reference equality issues, that avoids spamming multiple reloads,
   // which causes annoying flickering issues
   // a simple mechanism would be a debounce, but there's some mores stuff to try.
+  // eslint-disable-next-line no-unused-vars
   reloadTree(key: TestTreeElement | null) {
-    console.log("reload", key?.segments.join(":"));
+    // console.log("reload", key?.segments.join(":"));
     this._treeView.reload(null);
   }
 
@@ -212,6 +225,18 @@ export class TestResultsManager
         }
         break;
       }
+      case "onRunComplete": {
+        const data: AggregatedResult = rawData;
+        const realFiles = data.testResults.map(
+          (testResult) => testResult.testFilePath
+        );
+        for (const file of this._storedProcessInfo.keys()) {
+          if (!realFiles.includes(file)) {
+            this._storedProcessInfo.delete(file);
+          }
+        }
+        break;
+      }
       default:
         console.warn("unexpected event", event);
     }
@@ -284,8 +309,8 @@ export class TestResultsManager
       ? TreeItemCollapsibleState.None
       : TreeItemCollapsibleState.Collapsed;
     const item = new TreeItem(title, collapsedState);
-    item.command = "apexskier.jest.openTest";
     if (isTestFile) {
+      item.command = "apexskier.jest.openTest";
       item.path = segments[0];
       if (results?.failureMessage) {
         item.descriptiveText = results.failureMessage;
@@ -298,6 +323,7 @@ export class TestResultsManager
         (item as any).color = pendingColor;
       }
     } else if (isLeaf) {
+      item.command = "apexskier.jest.openTest";
       const testResult = results?.testResults.find(
         (r) => r.title === item.name
       );
