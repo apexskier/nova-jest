@@ -40,7 +40,7 @@
             {
               "title": "Refresh",
               "image": "__builtin.refresh",
-              "command": "apexskier.jest.refreshInformation"
+              "command": "apexskier.jest.reload"
             }
           ]
         },
@@ -51,5 +51,18 @@
         }
       ]
     }
-  ]
+  ],
+
+  "commands": {
+    "extensions": [
+      {
+        "title": "Preferences",
+        "command": "apexskier.jest.openWorkspaceConfig"
+      },
+      {
+        "title": "Restart",
+        "command": "apexskier.jest.reload"
+      }
+    ]
+  }
 }

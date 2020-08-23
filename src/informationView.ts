@@ -5,14 +5,9 @@ type Element = {
 };
 
 export class InformationView {
-  constructor(reload: () => Promise<void>) {
+  constructor() {
     this._treeView = new TreeView("apexskier.jest.sidebar.info", {
       dataProvider: this,
-    });
-
-    nova.commands.register("apexskier.jest.refreshInformation", async () => {
-      await reload();
-      this.reload();
     });
 
     this.getChildren = this.getChildren.bind(this);
@@ -31,23 +26,23 @@ export class InformationView {
     this._treeView.reload(this._statusElement);
   }
 
-  private readonly _tsVersionElement: Element = {
+  private readonly _versionElement: Element = {
     title: "Jest Version",
     value: "",
-    identifier: "jestVersion",
+    identifier: "version",
   };
-  public set tsVersion(value: string) {
-    this._tsVersionElement.value = value;
-    this._treeView.reload(this._tsVersionElement);
+  public set jestVersion(value: string) {
+    this._versionElement.value = value;
+    this._treeView.reload(this._versionElement);
   }
 
   reload() {
     this._treeView.reload();
   }
 
-  getChildren(element: Element): Array<Element> {
+  getChildren(element: Element | null): Array<Element> {
     if (element == null) {
-      return [this._statusElement, this._tsVersionElement];
+      return [this._statusElement, this._versionElement];
     }
     return [];
   }

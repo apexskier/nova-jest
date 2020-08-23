@@ -5,6 +5,7 @@ import type { AssertionResult, TestResult } from "@jest/test-result";
 import { clean } from "./stackUtils";
 import { wrapCommand, cleanPath, openFile, lineColToRange } from "./novaUtils";
 import { InformationView } from "./informationView";
+import { getJestExecPath } from "./jestExecPath";
 
 nova.commands.register(
   "apexskier.jest.openWorkspaceConfig",
@@ -13,8 +14,7 @@ nova.commands.register(
   })
 );
 
-nova.config.onDidChange("apexskier.jest.config.execPath", reload);
-nova.workspace.config.onDidChange("apexskier.jest.config.execPath", reload);
+nova.commands.register("apexskier.jest.reload", reload);
 
 const compositeDisposable = new CompositeDisposable();
 
@@ -24,30 +24,7 @@ async function reload() {
   await asyncActivate();
 }
 
-const informationView = new InformationView(reload);
-
-async function npmBin(): Promise<string> {
-  return new Promise<string>((resolve, reject) => {
-    const process = new Process("/usr/bin/env", {
-      args: ["npm", "bin"],
-      cwd: nova.workspace.path || nova.extension.path,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    let result = "";
-    process.onStdout((o) => {
-      result += o;
-    });
-    process.onStderr((e) => console.warn("npm bin:", e.trimRight()));
-    process.onDidExit((status) => {
-      if (status === 0) {
-        resolve(result.trim());
-      } else {
-        reject(new Error("failed to npm bin"));
-      }
-    });
-    process.start();
-  });
-}
+const informationView = new InformationView();
 
 function resultStatusToIssueSeverity(
   status: AssertionResult["status"]
@@ -73,53 +50,79 @@ const successColor = new Color("hex", [21 / 255, 194 / 255, 19 / 255, 1]);
 const failureColor = new Color("rgb", [194 / 255, 19 / 255, 37 / 255, 1]);
 const pendingColor = new Color("rgb", [194 / 255, 168 / 255, 19 / 255, 1]);
 
+async function getJestVersion(jestExecPath: string) {
+  return new Promise<string>((resolve, reject) => {
+    const process = new Process(jestExecPath, {
+      args: ["--version"],
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    let str = "";
+    process.onStdout((versionString) => {
+      str += versionString.trim();
+    });
+    process.onDidExit((status) => {
+      if (status === 0) {
+        resolve(str);
+      } else {
+        reject(status);
+      }
+    });
+    process.start();
+  });
+}
+
 async function asyncActivate() {
   informationView.status = "Activating...";
-
-  const npmBinDir = await npmBin();
 
   // this determines how to run jest
   // it should be project specific, so find the best option in this order:
   // - explicitly configured
   // - best guess (installed in the main node_modules)
   // - within plugin (no choice of version)
-  let jestExecPath: string;
-  const configJestExecPath =
-    nova.workspace.config.get("apexskier.jest.config.execPath", "string") ??
-    nova.config.get("apexskier.jest.config.execPath", "string");
-  if (configJestExecPath) {
-    if (nova.path.isAbsolute(configJestExecPath)) {
-      jestExecPath = configJestExecPath;
-    } else if (nova.workspace.path) {
-      jestExecPath = nova.path.join(nova.workspace.path, configJestExecPath);
-    } else {
-      nova.workspace.showErrorMessage(
-        "Save your workspace before using a relative Jest executable path."
-      );
-      return;
-    }
-  } else {
-    jestExecPath = nova.path.join(npmBinDir, "jest");
+
+  const jestExecPath = await getJestExecPath();
+  if (!jestExecPath) {
+    informationView.status = "Can't find Jest";
+    return;
   }
-  // Note: I don't check file access here because I'm not using filesystem entitlements
   console.info("using jest at:", jestExecPath);
 
   // get the jest version to display in the sidebar
-  const versionProcess = new Process(jestExecPath, {
-    args: ["--version"],
-    stdio: ["ignore", "pipe", "ignore"],
+  void getJestVersion(jestExecPath).then((version) => {
+    informationView.jestVersion = version;
   });
-  versionProcess.onStdout((versionString) => {
-    informationView.tsVersion = versionString.trim();
-  });
-  versionProcess.start();
-  await new Promise((resolve) => versionProcess.onDidExit(resolve));
 
   if (!nova.workspace.path) {
     informationView.status = "No workspace";
     informationView.reload(); // this is needed, otherwise the view won't show up properly, possibly a Nova bug
     return;
   }
+
+  // jest process will continually run
+  const jestProcess = new Process(jestExecPath, {
+    args: [
+      "--watchAll",
+      "--testLocationInResults",
+      "--reporters",
+      nova.path.join(nova.extension.path, "Scripts/reporter.dist.js"),
+    ],
+    env: {
+      CI: "true",
+    },
+    cwd: nova.workspace.path,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  // NOTE: We could emit in JSON (https://jestjs.io/docs/en/cli#--json) but that's going to be slower as all tests will need to pass before we can show results
+  jestProcess.onStdout(handleJestLine);
+  jestProcess.onStderr((line) => {
+    console.warn(line.trim());
+  });
+  jestProcess.start();
+  compositeDisposable.add({
+    dispose() {
+      jestProcess.terminate();
+    },
+  });
 
   const storedProcessInfo = new Map<
     string,
@@ -291,21 +294,6 @@ async function asyncActivate() {
     )
   );
 
-  // jest process will continually run
-  const jestProcess = new Process(jestExecPath, {
-    args: [
-      "--watchAll",
-      "--testLocationInResults",
-      "--reporters",
-      nova.path.join(nova.extension.path, "Scripts/reporter.dist.js"),
-    ],
-    env: {
-      CI: "true",
-    },
-    cwd: nova.workspace.path,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-
   // store an issue collection per test suite, that way errors can be pushed into different files but still be associated
   // with a specific test suite so we don't clear issues from other suites.
   // TODO: there's probably a bug if a jest test file gets renamed or deleted - it won't be deleted here
@@ -326,18 +314,6 @@ async function asyncActivate() {
   }
   const jestIssueCollections = new TestIssueCollections();
   compositeDisposable.add(jestIssueCollections);
-
-  // NOTE: We could emit in JSON (https://jestjs.io/docs/en/cli#--json) but that's going to be slower as all tests will need to pass
-  jestProcess.onStdout(handleJestLine);
-  jestProcess.onStderr((line) => {
-    console.warn(line.trim());
-  });
-  jestProcess.start();
-  compositeDisposable.add({
-    dispose() {
-      jestProcess.terminate();
-    },
-  });
 
   // TODO: I haven't yet figured out a reliable way to reload a specific element,
   // avoiding reference equality issues, that avoids spamming multiple reloads,
@@ -433,9 +409,10 @@ async function asyncActivate() {
   informationView.reload(); // this is needed, otherwise the view won't show up properly, possibly a Nova bug
 }
 
-export function activate() {
+// This isn't handled by Nova as async, but it's setup as async for tests
+export async function activate() {
   console.log("activating...");
-  asyncActivate()
+  return asyncActivate()
     .catch((err) => {
       informationView.status = "Not active";
       console.error("Failed to activate");

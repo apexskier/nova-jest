@@ -24,7 +24,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Environment (please complete the following information):**
 - macOS version: <!-- [e.g. 10.15.3 (19D76)] get this from  > About This Mac -->
-- Nova version: <!-- [e.g. 1.0b17 (190148)] get this from Nova > About Nova -->
+- Nova version: <!-- [e.g. 1.0b19 (195557)] get this from Nova > About Nova -->
 - Extension version: <!-- [e.g. 1.1.0] get this from the Nova Extension Library -->
 - Sidebar information: <!-- [e.g. Status Running, Jest Version 26.4.0] get this from the extension sidebar -->
 - NodeJS information:
