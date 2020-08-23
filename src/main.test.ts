@@ -8,13 +8,6 @@ jest.mock("./testResults", () => {
   }
   return { TestResultsManager: jest.fn(() => new TestResultsManager()) };
 });
-jest.mock("stack-utils", () => {
-  function StackUtils() {
-    return { parseLine: jest.fn() };
-  }
-  StackUtils.nodeInternals = () => [];
-  return { default: StackUtils };
-});
 
 jest.mock("./jestExecPath", () => ({
   getJestExecPath: async () => "/jestExecPath",

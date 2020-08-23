@@ -8,14 +8,18 @@ const stack = new StackUtils({
 });
 
 export function clean(rawStack: string) {
-  return rawStack
-    .split("\n")
-    .map(stack.parseLine.bind(stack))
-    .filter(
-      (callSite) =>
-        callSite &&
-        callSite.file &&
-        !callSite.file.includes("/node_modules/") &&
-        (!nova.workspace.path || callSite.file.startsWith(nova.workspace.path))
-    )[0];
+  return (
+    rawStack
+      .split("\n")
+      .map(stack.parseLine.bind(stack))
+      // .forEach(console.log.bind(console))
+      .filter(
+        (callSite) =>
+          callSite &&
+          callSite.file &&
+          !callSite.file.includes("/node_modules/") &&
+          (!nova.workspace.path ||
+            callSite.file.startsWith(nova.workspace.path))
+      )[0]
+  );
 }
