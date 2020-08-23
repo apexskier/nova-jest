@@ -76,21 +76,21 @@ export class TestResultsManager
   constructor() {
     this.handleJestLine = this.handleJestLine.bind(this);
     this.getChildren = this.getChildren.bind(this);
-    this.getRootElement = this.getRootElement.bind(this);
+    this._getRootElement = this._getRootElement.bind(this);
     this.getTreeItem = this.getTreeItem.bind(this);
-    this.openTest = this.openTest.bind(this);
+    this._openTest = this._openTest.bind(this);
 
     this._compositeDisposable.add(this._treeView);
     this._compositeDisposable.add(this._issueCollection);
     this._compositeDisposable.add(
       nova.commands.register(
         "apexskier.jest.openTest",
-        wrapCommand(this.openTest)
+        wrapCommand(this._openTest)
       )
     );
   }
 
-  async openTest(workspace: Workspace) {
+  private async _openTest(workspace: Workspace) {
     const open = openFile.bind(workspace);
     const openableElements = this._treeView.selection.filter(
       ({ segments: [, ...ancestors], isLeaf }) =>
@@ -132,7 +132,7 @@ export class TestResultsManager
     }
   }
 
-  getRootElement(k: string): TestTreeElement {
+  private _getRootElement(k: string): TestTreeElement {
     return {
       segments: [k],
       isLeaf:
@@ -146,7 +146,7 @@ export class TestResultsManager
   // which causes annoying flickering issues
   // a simple mechanism would be a debounce, but there's some mores stuff to try.
   // eslint-disable-next-line no-unused-vars
-  reloadTree(key: TestTreeElement | null) {
+  private _reloadTree(key: TestTreeElement | null) {
     // console.log("reload", key?.segments.join(":"));
     this._treeView.reload(null);
   }
@@ -164,7 +164,7 @@ export class TestResultsManager
         const key = nova.path.normalize(data.path);
         // this needs to happen only after initial load, I think
         if (this._storedProcessInfo.has(key)) {
-          toReload = this.getRootElement(key);
+          toReload = this._getRootElement(key);
         }
         this._storedProcessInfo.set(key, {
           isRunning: true,
@@ -176,7 +176,7 @@ export class TestResultsManager
         const data: TestResult = rawData;
         const key = nova.path.normalize(data.testFilePath);
         if (this._storedProcessInfo.has(key)) {
-          toReload = this.getRootElement(key);
+          toReload = this._getRootElement(key);
         }
         this._storedProcessInfo.set(key, { isRunning: false, results: data });
         const fileURI = `file://${key}`;
@@ -195,7 +195,7 @@ export class TestResultsManager
           //   console.log("result", JSON.stringify(result, null, "  "));
           // }
           (issue as any).message = result.fullName;
-          issue.source = result.title;
+          // issue.source = "jest"result.title;
           issue.severity = severity;
           if (result.location) {
             issue.line = result.location.line;
@@ -240,7 +240,7 @@ export class TestResultsManager
       default:
         console.warn("unexpected event", event);
     }
-    this.reloadTree(toReload);
+    this._reloadTree(toReload);
   }
 
   /// MARK Disposable
@@ -254,7 +254,7 @@ export class TestResultsManager
   getChildren(element: TestTreeElement): Array<TestTreeElement> {
     if (!element) {
       return Array.from(this._storedProcessInfo.keys()).map(
-        this.getRootElement
+        this._getRootElement
       );
     }
     const [path, ...ancestors] = element.segments;
