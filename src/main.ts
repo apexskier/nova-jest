@@ -193,6 +193,7 @@ async function asyncActivate() {
         ? TreeItemCollapsibleState.None
         : TreeItemCollapsibleState.Collapsed;
       const item = new TreeItem(title, collapsedState);
+      item.command = "apexskier.jest.openTest";
       if (isTestFile) {
         item.path = segments[0];
         if (results?.failureMessage) {
@@ -205,30 +206,27 @@ async function asyncActivate() {
         if (isRunning) {
           (item as any).color = pendingColor;
         }
-      } else {
-        if (isLeaf) {
-          const testResult = results?.testResults.find(
-            (r) => r.title === item.name
-          );
-          if (testResult) {
-            if (testResult.failureMessages.length > 0) {
-              item.descriptiveText = testResult.failureMessages[0];
-
-              item.tooltip = testResult.failureMessages[0];
-              (item as any).color = failureColor;
-            } else {
-              item.tooltip = testResult.fullName;
-              (item as any).color = successColor;
-            }
-            if (isRunning) {
-              (item as any).color = pendingColor;
-            }
+      } else if (isLeaf) {
+        const testResult = results?.testResults.find(
+          (r) => r.title === item.name
+        );
+        if (testResult) {
+          if (testResult.failureMessages.length > 0) {
+            item.descriptiveText = testResult.failureMessages[0];
+            item.tooltip = testResult.failureMessages[0];
+            (item as any).color = failureColor;
           } else {
-            console.warn("Failed to find results", item.name);
+            item.tooltip = testResult.fullName;
+            (item as any).color = successColor;
+          }
+          if (isRunning) {
+            (item as any).color = pendingColor;
           }
         } else {
-          item.image = "__builtin.path";
+          console.warn("Failed to find results", item.name);
         }
+      } else {
+        item.image = "__builtin.path";
       }
       item.identifier = element.segments.join("__JEST_EXTENSION__");
       return item;
@@ -246,48 +244,52 @@ async function asyncActivate() {
   });
   compositeDisposable.add(testResultsTreeView);
 
-  // TODO: replace this with an item command if it's possible to figure out which item was clicked
-  testResultsTreeView.onDidChangeSelection((elements) => {
-    if (!elements || !elements.length) {
-      return;
-    }
-    const [
-      {
-        segments: [path, ...ancestors],
-        isLeaf,
-      },
-    ] = elements;
-    if (ancestors.length == 0) {
-      openFile(path);
-      return;
-    }
-    const elementData = storedProcessInfo.get(path);
-    if (elementData && isLeaf) {
-      const testResult = elementData.results?.testResults.find(
-        (r) => r.title === ancestors[ancestors.length - 1]
-      );
-      if (!testResult) {
-        return;
-      }
-      (async () => {
-        const editor = await openFile(path);
-        if (!editor) {
-          nova.workspace.showWarningMessage("Couldn't open path");
-          return;
+  compositeDisposable.add(
+    nova.commands.register(
+      "apexskier.jest.openTest",
+      wrapCommand(async function openTest(workspace: Workspace) {
+        const open = openFile.bind(workspace);
+        const openableElements = testResultsTreeView.selection.filter(
+          ({ segments: [, ...ancestors], isLeaf }) =>
+            isLeaf || ancestors.length === 0
+        );
+        const openFiles: { [file: string]: TextEditor | null } = {};
+        await Promise.all(
+          openableElements.map(async ({ segments: [path] }) => {
+            openFiles[path] = await open(path);
+            // clear selection
+            if (openFiles[path]) {
+              (openFiles[path] as any).selectedRange = new Range(0, 0);
+            }
+          })
+        );
+        for (const element of openableElements) {
+          const {
+            segments: [path, ...ancestors],
+          } = element;
+          const editor = openFiles[path];
+          if (!editor) {
+            continue;
+          }
+          const location = storedProcessInfo
+            .get(path)
+            ?.results?.testResults.find(
+              (r) => r.title === ancestors[ancestors.length - 1]
+            )?.location;
+          if (!location) {
+            continue;
+          }
+          const pos = { line: location.line, character: location.column };
+          const range = lineColToRange(editor.document, {
+            start: pos,
+            end: pos,
+          });
+          editor.addSelectionForRange(range);
+          editor.scrollToPosition(range.start);
         }
-        if (!testResult.location) {
-          return;
-        }
-        const pos = {
-          line: testResult.location.line,
-          character: testResult.location.column,
-        };
-        const range = lineColToRange(editor.document, { start: pos, end: pos });
-        (editor as any).selectedRange = range;
-        editor.scrollToPosition(range.start);
-      })();
-    }
-  });
+      })
+    )
+  );
 
   // jest process will continually run
   const jestProcess = new Process(jestExecPath, {
@@ -306,6 +308,8 @@ async function asyncActivate() {
 
   // store an issue collection per test suite, that way errors can be pushed into different files but still be associated
   // with a specific test suite so we don't clear issues from other suites.
+  // TODO: there's probably a bug if a jest test file gets renamed or deleted - it won't be deleted here
+  // I probably need to listen for the full test suite completion and need to delete all tests that aren't present
   class TestIssueCollections implements Disposable {
     private _collections = new Map<string, IssueCollection>();
     get(suite: string): IssueCollection {
@@ -340,7 +344,7 @@ async function asyncActivate() {
   // which causes annoying flickering issues
   // a simple mechanism would be a debounce, but there's some mores stuff to try.
   function reloadTree(key: TestTreeElement | null) {
-    console.log(key);
+    console.log("reload", key?.segments.join(":"));
     testResultsTreeView.reload(null);
   }
 
@@ -355,7 +359,7 @@ async function asyncActivate() {
       case "onTestStart": {
         const data: Test = rawData;
         const key = nova.path.normalize(data.path);
-        // this needs to happen only after initial reload, I think
+        // this needs to happen only after initial load, I think
         if (storedProcessInfo.has(key)) {
           toReload = getRootElement(key);
         }

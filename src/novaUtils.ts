@@ -25,8 +25,9 @@ export function cleanPath(path: string) {
   return decodedPath.replace(wr, ".").replace(hr, "~");
 }
 
-export async function openFile(uri: string) {
-  let newEditor = await nova.workspace.openFile(uri);
+export async function openFile(this: Workspace | null, uri: string) {
+  const workspace = this ?? nova.workspace;
+  let newEditor = await workspace.openFile(uri);
   if (newEditor) {
     return newEditor;
   }
