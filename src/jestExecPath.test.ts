@@ -31,9 +31,15 @@ describe("jestExecPath", () => {
     (nova.config.get as jest.Mock).mockReset();
 
     ProcessMock.mockReset().mockImplementation(() => ({
-      onStdout: jest.fn((cb) => cb("/npmbin\n")),
+      onStdout: jest.fn((cb) => {
+        cb("/npmbin\n");
+        return { dispose: jest.fn() };
+      }),
       onStderr: jest.fn(),
-      onDidExit: jest.fn((cb) => cb(0)),
+      onDidExit: jest.fn((cb) => {
+        cb(0);
+        return { dispose: jest.fn() };
+      }),
       start: jest.fn(),
     }));
   });
