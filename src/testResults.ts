@@ -99,10 +99,11 @@ export class TestResultsManager
     const openFiles: { [file: string]: TextEditor | null } = {};
     await Promise.all(
       openableElements.map(async ({ segments: [path] }) => {
-        openFiles[path] = await open(path);
+        const editor = await open(path);
+        openFiles[path] = editor;
         // clear selection
-        if (openFiles[path]) {
-          (openFiles[path] as any).selectedRange = new Range(0, 0);
+        if (editor) {
+          editor.selectedRange = new Range(0, 0);
         }
       })
     );
@@ -180,9 +181,6 @@ export class TestResultsManager
         }
         this._storedProcessInfo.set(key, { isRunning: false, results: data });
         const fileURI = `file://${key}`;
-        // if (nova.inDevMode()) {
-        //   console.log("data", JSON.stringify(data, null, "  "));
-        // }
         const issueCollection = this._issueCollection.get(fileURI);
         issueCollection.clear();
         for (const result of data.testResults) {
@@ -191,11 +189,7 @@ export class TestResultsManager
             continue;
           }
           const issue = new Issue();
-          // if (nova.inDevMode()) {
-          //   console.log("result", JSON.stringify(result, null, "  "));
-          // }
-          (issue as any).message = result.fullName;
-          // issue.source = "jest"result.title;
+          issue.message = result.fullName;
           issue.severity = severity;
           if (result.location) {
             issue.line = result.location.line;
@@ -205,14 +199,11 @@ export class TestResultsManager
 
           if (Array.isArray(result.failureDetails)) {
             result.failureDetails.map((details: any) => {
-              // if (nova.inDevMode()) {
-              //   console.log("details", JSON.stringify(details, null, "  "));
-              // }
               if (typeof details.stack === "string") {
                 const callSite = clean(details.stack);
                 if (callSite) {
                   const issue = new Issue();
-                  (issue as any).message = details.message;
+                  issue.message = details.message;
                   issue.code = result.fullName;
                   issue.severity = IssueSeverity.Error;
                   issue.line = callSite.line;
@@ -315,12 +306,12 @@ export class TestResultsManager
       if (results?.failureMessage) {
         item.descriptiveText = results.failureMessage;
         item.tooltip = results.failureMessage;
-        (item as any).color = failureColor;
+        item.color = failureColor;
       } else {
-        (item as any).color = successColor;
+        item.color = successColor;
       }
       if (isRunning) {
-        (item as any).color = pendingColor;
+        item.color = pendingColor;
       }
     } else if (isLeaf) {
       item.command = "apexskier.jest.openTest";
@@ -331,13 +322,13 @@ export class TestResultsManager
         if (testResult.failureMessages.length > 0) {
           item.descriptiveText = testResult.failureMessages[0];
           item.tooltip = testResult.failureMessages[0];
-          (item as any).color = failureColor;
+          item.color = failureColor;
         } else {
           item.tooltip = testResult.fullName;
-          (item as any).color = successColor;
+          item.color = successColor;
         }
         if (isRunning) {
-          (item as any).color = pendingColor;
+          item.color = pendingColor;
         }
       } else {
         console.warn("Failed to find results", item.name);
