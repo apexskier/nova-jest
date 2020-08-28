@@ -64,7 +64,10 @@ describe("test suite", () => {
     ProcessMock.mockReset().mockImplementation(() => ({
       onStdout: jest.fn(),
       onStderr: jest.fn(),
-      onDidExit: jest.fn((cb) => cb(0)),
+      onDidExit: jest.fn((cb) => {
+        cb(0);
+        return { dispose: jest.fn() };
+      }),
       start: jest.fn(),
     }));
     (informationViewModule.InformationView as jest.Mock).mockReset();
@@ -122,7 +125,10 @@ describe("test suite", () => {
 
       (ProcessMock as jest.Mock<Partial<Process>>)
         .mockImplementationOnce(() => ({
-          onStdout: jest.fn((cb) => cb("jest v1.2.3\n")),
+          onStdout: jest.fn((cb) => {
+            cb("jest v1.2.3\n");
+            return { dispose: jest.fn() };
+          }),
           onStderr: jest.fn(),
           onDidExit: jest.fn(),
           start: jest.fn(),
@@ -130,7 +136,10 @@ describe("test suite", () => {
         .mockImplementationOnce(() => ({
           onStdout: jest.fn(),
           onStderr: jest.fn(),
-          onDidExit: jest.fn((cb) => cb(0)),
+          onDidExit: jest.fn((cb) => {
+            cb(0);
+            return { dispose: jest.fn() };
+          }),
           start: jest.fn(),
         }));
 
