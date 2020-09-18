@@ -10,6 +10,9 @@ async function npmBin(): Promise<string> {
       args: ["npm", "bin"],
       cwd: nova.workspace.path || nova.extension.path,
       stdio: ["ignore", "pipe", "pipe"],
+      env: {
+        NO_UPDATE_NOTIFIER: "true",
+      },
     });
     let result = "";
     process.onStdout((o) => {
