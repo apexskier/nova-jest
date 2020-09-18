@@ -9,6 +9,8 @@ assignees: ''
 
 A clear and concise description of what the bug is.
 
+<!-- Any hard crashes of the editor should [also be filed with Panic](https://dev.panic.com/panic/nova-issues/-/issues/new). Feel free to cross-file them here as well, but make sure to include a link to Panic's issue. -->
+
 **To Reproduce**
 Steps to reproduce the behavior:
 1. Go to '...'
@@ -23,34 +25,21 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Environment (please complete the following information):**
-- macOS version: <!-- [e.g. 10.15.3 (19D76)] get this from  > About This Mac -->
-- Nova version: <!-- [e.g. 1.0b19 (195557)] get this from Nova > About Nova -->
-- Extension version: <!-- [e.g. 1.1.0] get this from the Nova Extension Library -->
+- Nova version: <!-- [e.g. 1.0 (202519)] get this from Nova > About Nova -->
+- Extension version: <!-- [e.g. 1.1.1] get this from the Nova Extension Library -->
 - Sidebar information: <!-- [e.g. Status Running, Jest Version 26.4.0] get this from the extension sidebar -->
+- macOS version: <!-- [e.g. 10.15.5 (19F101)] get this from  > About This Mac -->
 - NodeJS information:
    - node version: <!-- [e.g. v14.4.0] get this by running `node --version` in your terminal -->
    - npm version: <!-- [e.g. 6.14.4] get this by running `npm --version` in your terminal -->
    - installation method: <!-- e.g. homebrew, nvm, built from source, etc -->
 
-**Additional context**
-Add any other context about the problem here. 
-
-**npm-debug.log**
-
-<details>
-
-<summary>npm-debug.log</summary>
+**Extension console output**
 
 <!--
-If you can find an npm debug log file for the extension error you're experiencing it will
-be very helpful.
-
-To find one, first run `grep -rl "apexskier.jest" "$(npm config get cache)/_logs"` in
-your terminal. If you see any files output, grab the contents and paste them into the code
-fence below.
+from Extensions > Show Extension Console, anything coming from the Source "TypeScript" or "TypeScript Language Server"
+Copying text preferred, for accessibility and searching.
 -->
 
-```
-```
-
-</details>
+**Additional context**
+Add any other context about the problem here.
