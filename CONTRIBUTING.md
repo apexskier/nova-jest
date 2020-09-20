@@ -12,6 +12,22 @@ Turn on extension development in Nova in Preferences > General > Extension Devel
 
 Use the Extension Console in Nova to debug the extension. I haven't found a way to get a debugger attached to the JavaScriptCore context.
 
+## Pull Requests
+
+### Changelog
+
+All user-facing changes should be documented in [CHANGELOG.md](./CHANGELOG.md).
+
+- If not present, add a `## future` section above the latest release
+- If not present, add a `###` heading for the category of your changes. Categories can include
+   - Breaking - backwards incompatible changes (semver major version bump)
+   - Added - new features (semver minor version bump)
+   - Fixed - bugfixes (semver patch version bump)
+   - Changed - tweaks or changes that don't significantly change how the extension is used
+- Add a single line for each change you've made
+
 ## Publishing notes
 
 Run `yarn build` first.
+
+Replace `future` in the changelog with a new version, following semver. Update the version in the [bug report template](./.github/ISSUE_TEMPLATE/bug_report.md), [`package.json`](./package.json), and [extension manifest](./jest.novaextension/extension.json).
