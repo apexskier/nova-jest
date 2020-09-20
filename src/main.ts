@@ -89,18 +89,34 @@ async function asyncActivate() {
     stdio: ["ignore", "pipe", "pipe"],
   });
   // NOTE: We could emit in JSON (https://jestjs.io/docs/en/cli#--json) but that's going to be slower as all tests will need to pass before we can show results
-  jestProcess.onStdout(testResults.handleJestLine);
-  jestProcess.onStderr((line) => {
-    console.warn(line.trim());
-  });
-  jestProcess.start();
-  compositeDisposable.add({
-    dispose() {
-      jestProcess.terminate();
-    },
-  });
+  compositeDisposable.add(jestProcess.onStdout(testResults.handleJestLine));
+  compositeDisposable.add(
+    jestProcess.onStderr((line) => {
+      console.warn(line.trim());
+    })
+  );
+  compositeDisposable.add(
+    jestProcess.onDidExit(() => {
+      nova.workspace.showWarningMessage("Jest stopped unexpectedly");
+      informationView.status = "Stopped";
+    })
+  );
+  try {
+    jestProcess.start();
+    compositeDisposable.add({
+      dispose() {
+        jestProcess.terminate();
+      },
+    });
+    informationView.status = "Running";
+  } catch (err) {
+    if (err.toString().includes("Could not find an executable for process")) {
+      informationView.status = "Jest not found";
+    } else {
+      throw err;
+    }
+  }
 
-  informationView.status = "Running";
   informationView.reload(); // this is needed, otherwise the view won't show up properly, possibly a Nova bug
 }
 

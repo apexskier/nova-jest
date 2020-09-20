@@ -1,5 +1,12 @@
 # Changelog
 
+## future
+
+### Changed
+
+- Warn on unexpected jest crashes
+- Handle missing jest more gracefully
+
 ## v1.1.1
 
 ### Fixed

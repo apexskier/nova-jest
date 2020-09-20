@@ -136,8 +136,8 @@ describe("test suite", () => {
         .mockImplementationOnce(() => ({
           onStdout: jest.fn(),
           onStderr: jest.fn(),
-          onDidExit: jest.fn((cb) => {
-            cb(0);
+          onDidExit: jest.fn(() => {
+            // never exits
             return { dispose: jest.fn() };
           }),
           start: jest.fn(),
@@ -175,6 +175,86 @@ describe("test suite", () => {
       const compositeDisposable: CompositeDisposable =
         CompositeDisposableMock.mock.results[0].value;
       expect(compositeDisposable.dispose).toBeCalledTimes(1);
+    });
+
+    it("warns if jest stops", async () => {
+      resetMocks();
+
+      nova.workspace.showWarningMessage = jest.fn();
+      (ProcessMock as jest.Mock<Partial<Process>>)
+        .mockImplementationOnce(() => ({
+          onStdout: jest.fn((cb) => {
+            cb("jest v1.2.3\n");
+            return { dispose: jest.fn() };
+          }),
+          onStderr: jest.fn(),
+          onDidExit: jest.fn(),
+          start: jest.fn(),
+        }))
+        .mockImplementationOnce(() => ({
+          onStdout: jest.fn(),
+          onStderr: jest.fn(),
+          onDidExit: jest.fn((cb) => {
+            cb(0);
+            return { dispose: jest.fn() };
+          }),
+          start: jest.fn(),
+        }));
+
+      await activate();
+      const jestProcess: Process = ProcessMock.mock.results[1].value;
+      const exitCB = (jestProcess.onDidExit as jest.Mock).mock.calls[0][0];
+      exitCB(0);
+
+      expect(nova.workspace.showWarningMessage).toHaveBeenCalledWith(
+        "Jest stopped unexpectedly"
+      );
+      const informationView = (informationViewModule.InformationView as jest.Mock<
+        informationViewModule.InformationView
+      >).mock.instances[0];
+      expect(informationView.status).toBe("Stopped");
+    });
+
+    it("handles missing jest", async () => {
+      resetMocks();
+
+      ProcessMock.mockReset().mockImplementation(() => ({
+        onStdout: jest.fn(),
+        onStderr: jest.fn(),
+        onDidExit: jest.fn((cb) => {
+          cb(0);
+          return { dispose: jest.fn() };
+        }),
+        start: jest.fn(() => {
+          throw new Error("Could not find an executable for process");
+        }),
+      }));
+
+      (ProcessMock as jest.Mock<Partial<Process>>)
+        .mockImplementationOnce(() => ({
+          onStdout: jest.fn((cb) => {
+            cb("jest v1.2.3\n");
+            return { dispose: jest.fn() };
+          }),
+          onStderr: jest.fn(),
+          onDidExit: jest.fn(),
+          start: jest.fn(),
+        }))
+        .mockImplementationOnce(() => ({
+          onStdout: jest.fn(),
+          onStderr: jest.fn(),
+          onDidExit: jest.fn((cb) => {
+            cb(0);
+            return { dispose: jest.fn() };
+          }),
+          start: jest.fn(),
+        }));
+
+      await activate();
+
+      expect(nova.workspace.showWarningMessage).toHaveBeenCalledWith(
+        "Jest stopped unexpectedly"
+      );
     });
 
     test("reload", async () => {
