@@ -1,5 +1,15 @@
 # Changelog
 
+## future
+
+### Added
+
+- Support running Jest in a custom directory
+
+### Changed
+
+- Provide more information if jest stops unexpectedly
+
 ## v1.1.2
 
 ### Changed

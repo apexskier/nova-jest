@@ -1,6 +1,7 @@
 import { wrapCommand } from "./novaUtils";
 import { InformationView } from "./informationView";
 import { getJestExecPath } from "./jestExecPath";
+import { getJestWorkingDir } from "./jestWorkingDirectory";
 import { TestResultsManager } from "./testResults";
 
 nova.commands.register(
@@ -60,16 +61,18 @@ async function asyncActivate() {
   }
   console.info("using jest at:", jestExecPath);
 
+  const jestWorkingDir = getJestWorkingDir();
+  if (!jestWorkingDir) {
+    informationView.status = "No working directory";
+    informationView.reload(); // this is needed, otherwise the view won't show up properly, possibly a Nova bug
+    return;
+  }
+  console.info("running in:", jestWorkingDir);
+
   // get the jest version to display in the sidebar
   void getJestVersion(jestExecPath).then((version) => {
     informationView.jestVersion = version;
   });
-
-  if (!nova.workspace.path) {
-    informationView.status = "No workspace";
-    informationView.reload(); // this is needed, otherwise the view won't show up properly, possibly a Nova bug
-    return;
-  }
 
   const testResults = new TestResultsManager();
   compositeDisposable.add(testResults);
@@ -85,19 +88,23 @@ async function asyncActivate() {
     env: {
       CI: "true",
     },
-    cwd: nova.workspace.path,
+    cwd: jestWorkingDir,
     stdio: ["ignore", "pipe", "pipe"],
   });
   // NOTE: We could emit in JSON (https://jestjs.io/docs/en/cli#--json) but that's going to be slower as all tests will need to pass before we can show results
   compositeDisposable.add(jestProcess.onStdout(testResults.handleJestLine));
+  let errOutput = "\n\n";
   compositeDisposable.add(
     jestProcess.onStderr((line) => {
       console.warn(line.trim());
+      errOutput += line;
     })
   );
   compositeDisposable.add(
     jestProcess.onDidExit(() => {
-      nova.workspace.showWarningMessage("Jest stopped unexpectedly");
+      nova.workspace.showWarningMessage(
+        `Jest stopped unexpectedly${errOutput}`
+      );
       informationView.status = "Stopped";
     })
   );

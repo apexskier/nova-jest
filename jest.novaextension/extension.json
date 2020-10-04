@@ -17,11 +17,22 @@
     "process": true
   },
 
-  "config-workspace": [
+  "configWorkspace": [
     {
       "key": "apexskier.jest.config.execPath",
       "title": "Jest executable",
-      "type": "path"
+      "description": "A path to to a Jest executable for a custom installation. Example: frontend/node_modules/.bin/jest",
+      "type": "path",
+      "relative": true
+    },
+    {
+      "key": "apexskier.jest.config.execWorkingDirectory",
+      "title": "Working directory",
+      "description": "Directory to execute Jest in, for a custom setup",
+      "type": "path",
+      "allowFiles": false,
+      "allowFolders": true,
+      "relative": true
     }
   ],
 
