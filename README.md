@@ -5,4 +5,3 @@ This is a plugin providing inline Jest test results in the [Nova editor from Pan
 <!-- [**Install now**](https://camlittle.com/jest.novaextension) -->
 
 [Extension README](./jest.novaextension/README.md)
-

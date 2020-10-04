@@ -4,9 +4,13 @@
 
 ### Running locally
 
-Clone this project, and open it in Nova. Run the Development task to build scripts and auto-rebuild on file changes.
+Clone this project, and open it in Nova.
 
-Turn on extension development in Nova in Preferences > General > Extension Development. I've you've installed the extension from the Extension Library, disable it, then activate the local one with Extensions > Activate Project as Extension.
+Run `yarn` in a terminal to install dependencies.
+
+Run the Development task to build scripts and auto-rebuild on file changes.
+
+Turn on extension development in Nova in Preferences > General > Extension Development. If you've installed the extension from the Extension Library, disable it, then activate the local one with Extensions > Activate Project as Extension.
 
 ### Debugging
 
@@ -20,10 +24,10 @@ All user-facing changes should be documented in [CHANGELOG.md](./CHANGELOG.md).
 
 - If not present, add a `## future` section above the latest release
 - If not present, add a `###` heading for the category of your changes. Categories can include
-   - Breaking - backwards incompatible changes (semver major version bump)
-   - Added - new features (semver minor version bump)
-   - Fixed - bugfixes (semver patch version bump)
-   - Changed - tweaks or changes that don't significantly change how the extension is used
+  - Breaking - backwards incompatible changes (semver major version bump)
+  - Added - new features (semver minor version bump)
+  - Fixed - bugfixes (semver patch version bump)
+  - Changed - tweaks or changes that don't significantly change how the extension is used
 - Add a single line for each change you've made
 
 ## Publishing notes
