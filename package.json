@@ -1,6 +1,6 @@
 {
   "name": "nova-jest",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Jest Nova integration",
   "main": "",
   "private": true,

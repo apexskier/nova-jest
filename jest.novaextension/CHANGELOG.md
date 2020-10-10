@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.2.1
+
+### Changed
+
+- Release management automation
+
 ## v1.2.0
 
 ### Added
