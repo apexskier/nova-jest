@@ -19,6 +19,9 @@ jest.mock("./jestWorkingDirectory", () => ({
   commands: {
     register: jest.fn(),
   },
+  config: {
+    get: () => false,
+  },
   workspace: {
     path: "/workspace",
   },
