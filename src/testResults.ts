@@ -37,8 +37,6 @@ function resultStatusToIssueSeverity(
 
 // store an issue collection per test suite, that way errors can be pushed into different files but still be associated
 // with a specific test suite so we don't clear issues from other suites.
-// TODO: there's probably a bug if a jest test file gets renamed or deleted - it won't be deleted here
-// I probably need to listen for the full test suite completion and need to delete all tests that aren't present
 class TestIssueCollections implements Disposable {
   private _collections = new Map<string, IssueCollection>();
   get(suite: string): IssueCollection {
