@@ -18,7 +18,7 @@ jest.mock("./stackUtils", () => ({
     register: jest.fn(),
   },
   path: {
-    normalize: jest.fn((s) => s),
+    normalize: jest.fn((s) => "normalized__" + s),
   },
   workspace: {
     path: "/workspace",
@@ -82,7 +82,7 @@ describe("TestResultsManager", () => {
     new TestResultsManager();
   });
 
-  describe("Tree View", () => {
+  test("Tree View", () => {
     const trm = new TestResultsManager();
 
     const failingTestResult: Pick<
@@ -127,7 +127,7 @@ describe("TestResultsManager", () => {
         Object {
           "isLeaf": false,
           "segments": Array [
-            "fileURI",
+            "normalized__fileURI",
           ],
         },
       ]
@@ -136,9 +136,9 @@ describe("TestResultsManager", () => {
       MockTreeItem {
         "color": mockConstructor {},
         "command": "apexskier.jest.openTest",
-        "identifier": "fileURI",
-        "name": "fileURI",
-        "path": "fileURI",
+        "identifier": "normalized__fileURI",
+        "name": "normalized__fileURI",
+        "path": "normalized__fileURI",
         "state": Symbol(TreeItemCollapsibleState.Collapsed),
       }
     `);
@@ -148,14 +148,14 @@ describe("TestResultsManager", () => {
         Object {
           "isLeaf": false,
           "segments": Array [
-            "fileURI",
+            "normalized__fileURI",
             "ancestor",
           ],
         },
         Object {
           "isLeaf": true,
           "segments": Array [
-            "fileURI",
+            "normalized__fileURI",
             "test result",
           ],
         },
@@ -163,7 +163,7 @@ describe("TestResultsManager", () => {
     `);
     expect(trm.getTreeItem(fileChildren[0])).toMatchInlineSnapshot(`
       MockTreeItem {
-        "identifier": "fileURI__JEST_EXTENSION__ancestor",
+        "identifier": "normalized__fileURI__JEST_EXTENSION__ancestor",
         "image": "__builtin.path",
         "name": "ancestor",
         "state": Symbol(TreeItemCollapsibleState.Collapsed),
@@ -175,7 +175,7 @@ describe("TestResultsManager", () => {
         Object {
           "isLeaf": true,
           "segments": Array [
-            "fileURI",
+            "normalized__fileURI",
             "ancestor",
             "title",
             "test result",
@@ -188,12 +188,63 @@ describe("TestResultsManager", () => {
         "color": mockConstructor {},
         "command": "apexskier.jest.openTest",
         "descriptiveText": "failure message",
-        "identifier": "fileURI__JEST_EXTENSION__ancestor__JEST_EXTENSION__title__JEST_EXTENSION__test result",
+        "identifier": "normalized__fileURI__JEST_EXTENSION__ancestor__JEST_EXTENSION__title__JEST_EXTENSION__test result",
         "name": "test result",
         "state": Symbol(TreeItemCollapsibleState.None),
         "tooltip": "failure message",
       }
     `);
     expect(trm.getChildren(leaf[0])).toHaveLength(0);
+  });
+
+  test("Removed test files are cleared", () => {
+    const trm = new TestResultsManager();
+
+    const testResult: Pick<
+      AssertionResult,
+      | "failureDetails"
+      | "failureMessages"
+      | "title"
+      | "status"
+      | "ancestorTitles"
+    > = {
+      ancestorTitles: [],
+      title: "test result",
+      status: "failed",
+      failureDetails: [],
+      failureMessages: [],
+    };
+    trm.handleJestLine(
+      JSON.stringify({
+        event: "onTestResult",
+        data: {
+          testFilePath: "fileURI1",
+          testResults: [testResult],
+        },
+      })
+    );
+    trm.handleJestLine(
+      JSON.stringify({
+        event: "onTestResult",
+        data: {
+          testFilePath: "fileURI2",
+          testResults: [testResult],
+        },
+      })
+    );
+    // 2 files are being tracked
+    expect(trm.getChildren(null)).toHaveLength(2);
+    // now jest only knows about 1 file
+    trm.handleJestLine(
+      JSON.stringify({
+        event: "onRunComplete",
+        data: {
+          testResults: [{ testFilePath: "fileURI2" }],
+        },
+      })
+    );
+    // and now 1 file is being tracked (and it's the right one)
+    expect(trm.getChildren(null)).toHaveLength(1);
+    expect(trm.getChildren(null)[0].segments[0]).toBe("normalized__fileURI2");
   });
 });

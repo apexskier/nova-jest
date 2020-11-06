@@ -218,8 +218,8 @@ export class TestResultsManager
       }
       case "onRunComplete": {
         const data: AggregatedResult = rawData;
-        const realFiles = data.testResults.map(
-          (testResult) => testResult.testFilePath
+        const realFiles = data.testResults.map((testResult) =>
+          nova.path.normalize(testResult.testFilePath)
         );
         for (const file of this._storedProcessInfo.keys()) {
           if (!realFiles.includes(file)) {

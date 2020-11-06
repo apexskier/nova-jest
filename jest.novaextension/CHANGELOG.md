@@ -1,5 +1,11 @@
 # Changelog
 
+## future
+
+### Fixed
+
+- Fix test results being cleared from sidebar
+
 ## v1.2.1
 
 ### Changed
