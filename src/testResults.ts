@@ -11,7 +11,7 @@ import type {
 import { cleanPath, lineColToRange, openFile, wrapCommand } from "./novaUtils";
 import { clean } from "./stackUtils";
 
-// colors pulled from
+// colors pulled from the jest homepage
 const successColor = new Color("hex", [21 / 255, 194 / 255, 19 / 255, 1]);
 const failureColor = new Color("rgb", [194 / 255, 19 / 255, 37 / 255, 1]);
 const pendingColor = new Color("rgb", [194 / 255, 168 / 255, 19 / 255, 1]);
@@ -143,7 +143,7 @@ export class TestResultsManager
   // TODO: I haven't yet figured out a reliable way to reload a specific element,
   // avoiding reference equality issues, that avoids spamming multiple reloads,
   // which causes annoying flickering issues
-  // a simple mechanism would be a debounce, but there's some mores stuff to try.
+  // a simple mechanism would be a debounce, but there's some more stuff to try.
   // eslint-disable-next-line no-unused-vars
   private _reloadTree(key: TestTreeElement | null) {
     // console.log("reload", key?.segments.join(":"));
