@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.3.0
+
+### Added
+
+- Add option to only run tests for changed files. Requires project to be a Git repository.
+
 ## v1.2.2
 
 ### Fixed

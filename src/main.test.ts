@@ -24,6 +24,9 @@ jest.mock("./jestWorkingDirectory", () => ({
   },
   workspace: {
     path: "/workspace",
+    config: {
+      get: () => "inherit",
+    },
   },
   extension: {
     path: "/extension",
