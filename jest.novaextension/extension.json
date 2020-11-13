@@ -3,7 +3,7 @@
   "name": "Jest",
   "organization": "Cameron Little",
   "description": "Jest test framework integration",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "categories": ["issues", "sidebars"],
   "license": "MIT",
   "repository": "https://github.com/apexskier/nova-jest",
@@ -24,6 +24,13 @@
       "description": "A path to to a Jest executable for a custom or global installation. Example: frontend/node_modules/.bin/jest",
       "type": "path",
       "relative": true
+    },
+    {
+      "key": "apexskier.jest.config.onlyChanged",
+      "title": "Run tests only for changed files",
+      "description": "Requires project to be a Git repository",
+      "type": "boolean",
+      "default": false
     }
   ],
 
@@ -43,6 +50,18 @@
       "allowFiles": false,
       "allowFolders": true,
       "relative": true
+    },
+    {
+      "key": "apexskier.jest.config.onlyChanged",
+      "title": "Run tests only for changed files",
+      "description": "Requires project to be a Git repository",
+      "type": "enum",
+      "values": [
+        ["inherit", "Inherit from Global Settings"],
+        ["true", "Enable"],
+        ["false", "Disable"]
+      ],
+      "default": "inherit"
     }
   ],
 

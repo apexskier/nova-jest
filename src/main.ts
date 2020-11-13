@@ -1,6 +1,7 @@
 import { wrapCommand } from "./novaUtils";
 import { InformationView } from "./informationView";
 import { getJestExecPath } from "./jestExecPath";
+import { getJestWatchMode } from "./jestWatchMode";
 import { getJestWorkingDir } from "./jestWorkingDirectory";
 import { TestResultsManager } from "./testResults";
 
@@ -80,7 +81,7 @@ async function asyncActivate() {
   // jest process will continually run
   const jestProcess = new Process(jestExecPath, {
     args: [
-      "--watchAll",
+      getJestWatchMode(),
       "--testLocationInResults",
       "--reporters",
       nova.path.join(nova.extension.path, "Scripts/reporter.dist.js"),
