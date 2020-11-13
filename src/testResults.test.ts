@@ -247,4 +247,34 @@ describe("TestResultsManager", () => {
     expect(trm.getChildren(null)).toHaveLength(1);
     expect(trm.getChildren(null)[0].segments[0]).toBe("normalized__fileURI2");
   });
+
+  test("Handles bad output", () => {
+    const trm = new TestResultsManager();
+    const globalWarn = global.console.warn;
+    global.console.warn = jest.fn();
+    const globalLog = global.console.log;
+    global.console.log = jest.fn();
+
+    const line = "not real json";
+    trm.handleJestLine(line);
+
+    expect(global.console.warn).toBeCalledTimes(1);
+    global.console.warn = globalWarn;
+    expect(global.console.log).toBeCalledTimes(1);
+    expect(global.console.log).toBeCalledWith(line);
+    global.console.log = globalLog;
+  });
+
+  test("Ignores first-run no tests errors.", () => {
+    const trm = new TestResultsManager();
+    const globalWarn = global.console.warn;
+    global.console.warn = jest.fn();
+
+    trm.handleJestLine(
+      "No tests found related to files changed since last commit.\n  "
+    );
+
+    expect(global.console.warn).not.toBeCalled();
+    global.console.warn = globalWarn;
+  });
 });
