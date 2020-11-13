@@ -154,7 +154,15 @@ export class TestResultsManager
     if (!line.trim()) {
       return;
     }
-    const { event, data: rawData } = JSON.parse(line);
+    let parsed: any;
+    try {
+      parsed = JSON.parse(line);
+    } catch (err) {
+      console.warn("Failed to parse jest output");
+      console.log(line);
+      return;
+    }
+    const { event, data: rawData } = parsed;
 
     let toReload: TestTreeElement | null = null;
     switch (event) {
