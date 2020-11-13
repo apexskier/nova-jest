@@ -158,6 +158,11 @@ export class TestResultsManager
     try {
       parsed = JSON.parse(line);
     } catch (err) {
+      if (line.trim() == "No tests found related to files changed since last commit.") {
+        // expected - jest has extra output that doesn't get wrapped in the custom reporter
+        // when using only changed file watcher
+        return;
+      }
       console.warn("Failed to parse jest output");
       console.log(line);
       return;
