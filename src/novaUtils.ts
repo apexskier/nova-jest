@@ -48,7 +48,20 @@ export function lineColToRange(
     end: { line: number; character: number };
   }
 ): Range {
-  const fullContents = document.getTextInRange(new Range(0, document.length));
+  let fullContents: string;
+  try {
+    fullContents = document.getTextInRange(new Range(0, document.length));
+  } catch (err) {
+    if (
+      (err as Error).message.includes(
+        "Range exceeds bounds of the document's text"
+      )
+    ) {
+      console.warn(err);
+      console.warn("document length:", document.length);
+    }
+    throw err;
+  }
   let rangeStart: number | null = null;
   let rangeEnd: number | null = null;
   let chars = 0;

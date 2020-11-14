@@ -1,5 +1,11 @@
 # Changelog
 
+## future
+
+### Changed
+
+- Use shared utility for boolean preferences
+
 ## v1.3.0
 
 ### Added
