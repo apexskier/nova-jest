@@ -7,6 +7,8 @@ on:
   pull_request:
     branches:
       - master
+  issue_comment:
+    types: [created]
 
 jobs:
   build:
@@ -21,11 +23,36 @@ jobs:
       - name: Install dependencies
         run: yarn
 
+      - name: Check fix-for-me
+        uses: khan/pull-request-comment-trigger@bb03972
+        id: check
+        with:
+          trigger: '@github-actions fix-for-me'
+          reaction: '+1'
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+
       - name: Lint
+        if: steps.check.outputs.triggered != 'true'
         run: yarn lint
+
+      - name: Fix
+        if: steps.check.outputs.triggered == 'true'
+        run: yarn fix
 
       - name: Build
         run: yarn build
 
       - name: Test
+        if: steps.check.outputs.triggered != 'true'
         run: yarn test
+
+      - name: Test
+        if: steps.check.outputs.triggered == 'true'
+        run: yarn test -u
+
+      - name: Commit diff
+        if: steps.check.outputs.triggered == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: 'Commit changed files'
