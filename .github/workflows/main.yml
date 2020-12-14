@@ -15,14 +15,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v1
-
-      - name: Install dependencies
-        run: yarn
-
       - name: Check fix-for-me
         id: check
         uses: khan/pull-request-comment-trigger@bb03972
@@ -32,6 +24,22 @@ jobs:
           reaction: "+1"
         env:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Checkout detatched
+        if: steps.check.outputs.triggered != 'true'
+        uses: actions/checkout@v2
+
+      - name: Checkout
+        if: steps.check.outputs.triggered == 'true'
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v1
+
+      - name: Install dependencies
+        run: yarn
 
       - name: Lint
         if: steps.check.outputs.triggered != 'true'
