@@ -26,7 +26,7 @@ jobs:
       - name: Check fix-for-me
         id: check
         uses: khan/pull-request-comment-trigger@bb03972
-        if: ${{ github.event_name == "issue_comment" }}
+        if: ${{ github.event_name == 'issue_comment' }}
         with:
           trigger: "@github-actions fix-for-me"
           reaction: "+1"
