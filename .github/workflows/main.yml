@@ -23,15 +23,6 @@ jobs:
       - name: Install dependencies
         run: yarn
 
-      - name: Lint
-        run: yarn lint
-
-      - name: Build
-        run: yarn build
-
-      - name: Test
-        run: yarn test
-
       - name: Check fix-for-me
         uses: khan/pull-request-comment-trigger@bb03972
         id: check
@@ -40,9 +31,26 @@ jobs:
           reaction: '+1'
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
-      - name: Commit diff
+
+      - name: Lint
+        if: steps.check.outputs.triggered != 'true'
+        run: yarn lint
+
+      - name: Fix
         if: steps.check.outputs.triggered == 'true'
         run: yarn fix
+
+      - name: Build
+        run: yarn build
+
+      - name: Test
+        if: steps.check.outputs.triggered != 'true'
+        run: yarn test
+
+      - name: Test
+        if: steps.check.outputs.triggered == 'true'
+        run: yarn test -u
+
       - name: Commit diff
         if: steps.check.outputs.triggered == 'true'
         uses: stefanzweifel/git-auto-commit-action@v4
