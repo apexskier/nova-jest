@@ -33,7 +33,7 @@ jobs:
         run: yarn test
 
       - name: Check if diff should be committed
-        uses: khan/pull-request-comment-trigger@master
+        uses: khan/pull-request-comment-trigger@bb03972
         id: check
         with:
           trigger: '@github-actions commit-diff'
