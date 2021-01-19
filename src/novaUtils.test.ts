@@ -66,13 +66,15 @@ This property is readonly.`;
 `,
     } as any;
 
-    const validCases: Array<[
-      {
-        start: { line: number; character: number };
-        end: { line: number; character: number };
-      },
-      Range
-    ]> = [
+    const validCases: Array<
+      [
+        {
+          start: { line: number; character: number };
+          end: { line: number; character: number };
+        },
+        Range
+      ]
+    > = [
       [
         {
           start: { line: 0, character: 0 },

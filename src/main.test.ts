@@ -54,9 +54,9 @@ global.console.log = jest.fn((...args) => {
 });
 global.console.info = jest.fn();
 
-const CompositeDisposableMock: jest.Mock<Partial<
-  CompositeDisposable
->> = jest
+const CompositeDisposableMock: jest.Mock<
+  Partial<CompositeDisposable>
+> = jest
   .fn()
   .mockImplementation(() => ({ add: jest.fn(), dispose: jest.fn() }));
 (global as any).CompositeDisposable = CompositeDisposableMock;
@@ -122,9 +122,8 @@ describe("test suite", () => {
     });
 
     expect(informationViewModule.InformationView).toBeCalledTimes(1);
-    const informationView = (informationViewModule.InformationView as jest.Mock<
-      informationViewModule.InformationView
-    >).mock.instances[0];
+    const informationView = (informationViewModule.InformationView as jest.Mock<informationViewModule.InformationView>)
+      .mock.instances[0];
     expect(informationView.status).toBe("Running");
     expect(informationView.reload).toBeCalledTimes(1);
   }
@@ -158,9 +157,8 @@ describe("test suite", () => {
       assertActivationBehavior();
 
       // jest version is reported in the information view
-      const informationView = (informationViewModule.InformationView as jest.Mock<
-        informationViewModule.InformationView
-      >).mock.instances[0];
+      const informationView = (informationViewModule.InformationView as jest.Mock<informationViewModule.InformationView>)
+        .mock.instances[0];
       expect(informationView.jestVersion).toBeUndefined();
       const jestVersionProcess: Process = ProcessMock.mock.results[0].value;
       const exitCB = (jestVersionProcess.onDidExit as jest.Mock).mock
@@ -222,9 +220,8 @@ describe("test suite", () => {
       expect(nova.workspace.showWarningMessage).toHaveBeenCalledWith(
         "Jest stopped unexpectedly\n\nerror message"
       );
-      const informationView = (informationViewModule.InformationView as jest.Mock<
-        informationViewModule.InformationView
-      >).mock.instances[0];
+      const informationView = (informationViewModule.InformationView as jest.Mock<informationViewModule.InformationView>)
+        .mock.instances[0];
       expect(informationView.status).toBe("Stopped");
     });
 
@@ -251,9 +248,8 @@ describe("test suite", () => {
 
       expect(nova.workspace.showWarningMessage).not.toBeCalled();
 
-      const informationView = (informationViewModule.InformationView as jest.Mock<
-        informationViewModule.InformationView
-      >).mock.instances[0];
+      const informationView = (informationViewModule.InformationView as jest.Mock<informationViewModule.InformationView>)
+        .mock.instances[0];
       expect(informationView.status).toBe("Jest not found");
     });
 
