@@ -3,65 +3,54 @@ name: CI
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
-  issue_comment:
-    types: [created]
+      - main
 
 jobs:
-  CI:
+  auto-merge:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Auto merge (dependency updates)
+        uses: pascalgn/automerge-action@v0.13.1
+        if: |
+          contains(github.event.pull_request.labels.*.name, 'dependencies')
+          && github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_GH_TOKEN }}
+          MERGE_METHOD: squash
+          MERGE_LABELS: ""
+          MERGE_FILTER_AUTHOR: dependabot[bot]
+          MERGE_FORKS: false
+          MERGE_DELETE_BRANCH: true
+
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check fix-for-me
-        id: check
-        uses: khan/pull-request-comment-trigger@bb03972
-        if: ${{ github.event_name == 'issue_comment' }}
-        with:
-          trigger: "@github-actions fix-for-me"
-          reaction: "+1"
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-
-      - name: Checkout detatched
-        if: steps.check.outputs.triggered != 'true'
-        uses: actions/checkout@v2
-
-      - name: Checkout
-        if: steps.check.outputs.triggered == 'true'
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.head_ref }}
+      - uses: actions/checkout@v2
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v1
+        with:
+          node-version: "15"
 
       - name: Install dependencies
         run: yarn
 
       - name: Lint
-        if: steps.check.outputs.triggered != 'true'
         run: yarn lint
-
-      - name: Fix
-        if: steps.check.outputs.triggered == 'true'
-        run: yarn fix
 
       - name: Build
         run: yarn build
 
       - name: Test
-        if: steps.check.outputs.triggered != 'true'
         run: yarn test
 
-      - name: Test (update snapshots)
-        if: steps.check.outputs.triggered == 'true'
-        run: yarn test -u
-
-      - name: Commit diff
-        if: steps.check.outputs.triggered == 'true'
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: "Commit changed files"
+      - name: Ensure clean
+        run: |
+          git status --porcelain
+          test -z "$(git status --porcelain)"
