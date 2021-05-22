@@ -59,7 +59,8 @@ interface TestTreeElement {
 }
 
 export class TestResultsManager
-  implements Disposable, TreeDataProvider<TestTreeElement> {
+  implements Disposable, TreeDataProvider<TestTreeElement>
+{
   private _treeView = new TreeView("apexskier.jest.sidebar.tests", {
     dataProvider: this,
   });
