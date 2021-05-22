@@ -28,9 +28,7 @@ jest.mock("./stackUtils", () => ({
 const ColorMock: jest.Mock<Partial<Color>> = jest.fn();
 (global as any).Color = ColorMock;
 
-const CompositeDisposableMock: jest.Mock<
-  Partial<CompositeDisposable>
-> = jest
+const CompositeDisposableMock: jest.Mock<Partial<CompositeDisposable>> = jest
   .fn()
   .mockImplementation(() => ({ add: jest.fn(), dispose: jest.fn() }));
 (global as any).CompositeDisposable = CompositeDisposableMock;
@@ -43,9 +41,9 @@ function mockTreeViewImplementation() {
     visible: true,
   };
 }
-const TreeViewTypedMock: jest.Mock<
-  TreeView<unknown>
-> = jest.fn().mockImplementation(mockTreeViewImplementation);
+const TreeViewTypedMock: jest.Mock<TreeView<unknown>> = jest
+  .fn()
+  .mockImplementation(mockTreeViewImplementation);
 const TreeViewMock: jest.Mock<Partial<TreeView<unknown>>> = TreeViewTypedMock;
 (global as any).TreeView = TreeViewMock;
 
@@ -55,12 +53,12 @@ class MockTreeItem {
 }
 (global as any).TreeItem = MockTreeItem;
 
-const IssueCollectionMock: jest.Mock<
-  Partial<IssueCollection>
-> = jest.fn().mockImplementation(() => ({
-  clear: jest.fn(),
-  append: jest.fn(),
-}));
+const IssueCollectionMock: jest.Mock<Partial<IssueCollection>> = jest
+  .fn()
+  .mockImplementation(() => ({
+    clear: jest.fn(),
+    append: jest.fn(),
+  }));
 (global as any).IssueCollection = IssueCollectionMock;
 
 (global as any).IssueSeverity = { Error: "Error", Hint: "Hint" };
