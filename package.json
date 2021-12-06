@@ -42,7 +42,7 @@
     "nova-extension-utils": "^1.4.0",
     "onchange": "^7.1.0",
     "prettier": "^2.4.1",
-    "rollup": "^2.60.0",
+    "rollup": "^2.60.2",
     "rollup-plugin-typescript2": "^0.31.1",
     "stack-utils": "^2.0.5",
     "ts-jest": "^26.5.6",
