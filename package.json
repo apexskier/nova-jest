@@ -50,6 +50,6 @@
   },
   "dependencies": {
     "rollup-plugin-node-builtins": "^2.1.2",
-    "tslib": "^2.5.3"
+    "tslib": "^2.6.0"
   }
 }
